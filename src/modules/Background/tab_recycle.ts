@@ -14,7 +14,7 @@ export const storage = new TabStorage({ type: 'local' });
 
 export let highlightedTabIds: number[] = [];
 
-export async function recycleTabs(tabs: chrome.tabs.Tab[], skipFilter: boolean = false): Promise<number> {
+export async function recycleTabs(tabs: chrome.tabs.Tab[], skipFilter: boolean = false, autoRemove: boolean = true): Promise<number> {
   const h = new MessageHandler();
   const settings = await h.getSettings();
   return new Promise((resolve) => {
@@ -48,9 +48,13 @@ export async function recycleTabs(tabs: chrome.tabs.Tab[], skipFilter: boolean =
         storage.saveTab(tab);
       })
 
-      chrome.tabs.remove(recycleTabs.map((tab) => tab.tabId), () => {
-        resolve(recycleTabs.length)
-      });
+      if (autoRemove) {
+        chrome.tabs.remove(recycleTabs.map((tab) => tab.tabId), () => {
+          resolve(recycleTabs.length);
+        });
+      } else {
+        resolve(recycleTabs.length);
+      }
     } catch (err: any) {
       emitErrorNotification(err)
     }
@@ -84,9 +88,11 @@ let pendingTabQueue: chrome.tabs.Tab[] = [];
 async function _scheduleReycle() {
   const processQueue = pendingTabQueue;
   pendingTabQueue = [];
-  const len = await recycleTabs(processQueue)
-  dispatchUpdateList();
-  emitRecycleNotification(`Recycle ${len} tab(s)`)
+  const len = await recycleTabs(processQueue);
+  if (len) {
+    dispatchUpdateList();
+    emitRecycleNotification(`Recycle ${len} tab(s)`)
+  }
 }
 
 const scheduleRecycle = debounce(_scheduleReycle, 300);
