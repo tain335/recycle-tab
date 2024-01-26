@@ -7,6 +7,7 @@ import { MessageHandler } from "./message_handler";
 import { SettingsValue } from "@src/constants/constants";
 import parseUrl from 'parse-url';
 import { dispatchUpdateList } from "./message_dispatcher";
+import { debounce } from "lodash";
 
 //QUOTA_BYTES_PER_ITEM quota exceeded
 export const storage = new TabStorage({ type: 'local' });
@@ -46,11 +47,10 @@ export async function recycleTabs(tabs: chrome.tabs.Tab[], skipFilter: boolean =
         cache?.remove(tab.tabId);
         storage.saveTab(tab);
       })
-      // resolve(recycleTabs.length)
+
       chrome.tabs.remove(recycleTabs.map((tab) => tab.tabId), () => {
-        emitRecycleNotification(`Recycle ${recycleTabs.length} Tab(s)`)
         resolve(recycleTabs.length)
-      })
+      });
     } catch (err: any) {
       emitErrorNotification(err)
     }
@@ -79,6 +79,18 @@ export function updateCacheFromSettings(newSettings: SettingsValue, oldSettings:
   }
 }
 
+let pendingTabQueue: chrome.tabs.Tab[] = [];
+
+async function _scheduleReycle() {
+  const processQueue = pendingTabQueue;
+  pendingTabQueue = [];
+  const len = await recycleTabs(processQueue)
+  dispatchUpdateList();
+  emitRecycleNotification(`Recycle ${len} tab(s)`)
+}
+
+const scheduleRecycle = debounce(_scheduleReycle, 300);
+
 async function initLRUCache() {
   const settings = await storage.getUserSettings();
   cache = TabCache.init({
@@ -87,10 +99,8 @@ async function initLRUCache() {
       if (tab.url) {
         try {
           chrome.tabs.get(tab.tabId).then(async (tab) => {
-            const len = await recycleTabs([tab])
-            if (len) {
-              dispatchUpdateList();
-            }
+            pendingTabQueue.push(tab);
+            scheduleRecycle();
           })
         } catch (err: any) {
           emitErrorNotification(err)

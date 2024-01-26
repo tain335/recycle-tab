@@ -62,6 +62,11 @@ const Options: React.FC<Props> = ({ title }: Props) => {
 
   const onRemove = async (tab: RecycleTab) => {
     await chrome.runtime.sendMessage({ type: MessageType.RemoveTabs, data: [tab.tabId] });
+    const index = selectedTabs.indexOf(tab.tabId)
+    if (index !== -1) {
+      const selected = selectedTabs.slice(0, selectedTabs.length).splice(index, 1);
+      setSelectedTabs(selected);
+    }
     update();
   }
 

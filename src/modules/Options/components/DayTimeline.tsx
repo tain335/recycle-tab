@@ -19,8 +19,10 @@ interface TabItemProps {
 
 function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
   return <div style={{ display: "flex", marginBottom: 10, background: selected ? '#e6f4ff' : '' }}>
-    <div style={{ lineHeight: '32px', fontSize: '16px', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={() => {
-      onSelectedChange(tab, !selected);
+    <div style={{ lineHeight: '32px', fontSize: '16px', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={(e) => {
+      if (e.currentTarget === e.target) {
+        onSelectedChange(tab, !selected);
+      }
     }}>
       <div style={{ display: 'inline-block' }} onClick={(e) => e.stopPropagation()}>
         <Link
@@ -37,15 +39,17 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           }} href={tab.url}>{tab.title}</Link>
       </div>
     </div>
-    <div style={{ width: 250, textAlign: 'right', cursor: 'pointer' }} onClick={() => {
-      onSelectedChange(tab, !selected);
+    <div style={{ width: 250, textAlign: 'right', cursor: 'pointer' }} onClick={(e) => {
+      if (e.currentTarget === e.target) {
+        onSelectedChange(tab, !selected);
+      }
     }}>
       {/* <Button style={{ marginRight: 10 }} variant="outlined" size="small">收藏</Button> */}
       <ConfirmDialog title='Tips' content='Are you sure to remove this tab?'
         onConfirm={() => {
           onRemove(tab)
         }}>
-        {(setOpen) => <Button style={{ marginRight: 10 }} variant="outlined" size="small" onClick={() => {
+        {(setOpen) => <Button style={{ marginRight: 10 }} variant="outlined" size="small" onClick={(e) => {
           setOpen(true)
         }}>Remove</Button>}
       </ConfirmDialog>

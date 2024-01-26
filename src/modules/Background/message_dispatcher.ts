@@ -21,8 +21,6 @@ export function initMessageDispatcher() {
   });
 }
 
-function _dispatchUpdateList() {
+export function dispatchUpdateList() {
   dispatchMessage({ type: MessageType.UpdateTabList })
 }
-
-export const dispatchUpdateList = debounce(_dispatchUpdateList, 300);
