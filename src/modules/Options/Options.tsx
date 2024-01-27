@@ -107,6 +107,14 @@ const Options: React.FC<Props> = ({ title }: Props) => {
     </div>
     <Drawer variant="persistent" open={!!selectedTabs.length} anchor='bottom' hideBackdrop>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', height: 60, margin: '0 160px' }}>
+        <Button variant='outlined' size='small' onClick={() => {
+          selectedTabs.map((id) => tabs.find((t) => t.tabId === id)).forEach((t) => {
+            if (t) {
+              window.open(t?.url)
+            }
+          })
+          setSelectedTabs([]);
+        }}>Batch Open({selectedTabs.length})</Button>
         <ConfirmDialog title='Tips' content='Are you sure to remove these tabs?'
           onConfirm={() => {
             chrome.runtime.sendMessage({ type: MessageType.RemoveTabs, data: selectedTabs });
@@ -114,6 +122,7 @@ const Options: React.FC<Props> = ({ title }: Props) => {
             frontendEmitter.emit('update_tab_list');
           }}>
           {(setOpen) => <Button
+            style={{ marginLeft: 10 }}
             variant="outlined"
             size='small'
             color='error'
