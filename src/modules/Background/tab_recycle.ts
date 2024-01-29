@@ -124,8 +124,29 @@ async function initLRUCache() {
   })
 }
 
+async function createOffscreen() {
+  // @ts-ignore
+  await chrome.offscreen.createDocument({
+    url: 'keepalive.html',
+    reasons: ['BLOBS'],
+    justification: 'keep service worker running',
+  })
+}
+
+async function initRecycleLoop() {
+  chrome.runtime.onStartup.addListener(createOffscreen);
+
+  onmessage = () => {
+    cache?.pureStale()
+  }; // keepAlive
+
+  await createOffscreen();
+}
+
 export async function initTabRecycle() {
   await initLRUCache();
+  await initRecycleLoop();
+
   // record tab
   chrome.tabs.onCreated.addListener((tab) => {
     try {

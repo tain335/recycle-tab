@@ -1,5 +1,4 @@
 import { MessageType } from "@src/constants/constants";
-import { debounce } from "lodash";
 
 const clients: chrome.runtime.Port[] = [];
 

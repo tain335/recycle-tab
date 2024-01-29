@@ -16,11 +16,12 @@ export class TabCache {
   constructor(private cache: LRUCache<number, RecycleTab, (tab: RecycleTab) => void>) { }
 
   static init(opts: TabCacheOptions) {
-
+    console.log('ttl', opts.ttl ?? DefaultTTL)
     const cache = new TabCache(new LRUCache<number, RecycleTab, (tab: RecycleTab) => void>({
       ttl: opts?.ttl ?? DefaultTTL,
-      ttlAutopurge: true,
+      ttlAutopurge: false,
       allowStale: false,
+      max: 10000,
       dispose: (tab, key, reason) => {
         if (reason === 'delete') {
           if (tab.manualDelete) {
@@ -29,6 +30,7 @@ export class TabCache {
           (async function disposeHandler() {
             const tabs = await chrome.tabs.query({});
             const settings = await storage.getUserSettings();
+            console.info('recycle debug: ', highlightedTabIds, tab.tabId);
             if (tabs.length > Number(settings.recycleStart) && !highlightedTabIds.includes(tab.tabId)) {
               opts.onDispose?.(tab)
             } else {
@@ -71,6 +73,7 @@ export class TabCache {
   }
 
   updateTTL(ttl: number) {
+    console.info('update ttl', ttl)
     this.cache.ttl = ttl;
   }
 
@@ -81,5 +84,13 @@ export class TabCache {
 
   enable() {
     this.disabled = false;
+  }
+
+  pureStale() {
+    if (!this.disable) {
+      return
+    }
+    console.info('purgeStale')
+    this.cache.purgeStale();
   }
 }

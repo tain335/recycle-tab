@@ -34,7 +34,7 @@ export function initMessageHandler() {
   async function callHandler(handler: (data: any) => Promise<any>, data: any, sendResponse: (response?: any) => void) {
     try {
       const res = await handler(data);
-      console.log('call response: ', res)
+      console.info('call response: ', res)
       sendResponse(res);
     } catch (err) {
       sendResponse(err)
@@ -42,7 +42,7 @@ export function initMessageHandler() {
   }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('call type: ' + message.type)
+    console.info('call type: ' + message.type)
     switch (message.type) {
       case MessageType.GetSettings:
         callHandler(h.getSettings, message.data, sendResponse);

@@ -4,13 +4,12 @@
   "description": "Recycle Tab",
   "options_page": "options.html",
   "permissions": [
-    "alarms",
+    "offscreen",
     "tabs",
     "storage",
     "unlimitedStorage",
     "activeTab",
     "contextMenus",
-    "desktopCapture",
     "history",
     "tabGroups",
     "notifications"

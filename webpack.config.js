@@ -41,6 +41,7 @@ var options = {
   entry: {
     options: path.join(__dirname, 'src', 'modules', 'Options', 'index.jsx'),
     popup: path.join(__dirname, 'src', 'modules', 'Popup', 'index.jsx'),
+    keepalive: path.join(__dirname, 'src', 'modules', 'Keepalive', 'index.js'),
     background: path.join(__dirname, 'src', 'modules', 'Background', 'index.js')
   },
   chromeExtensionBoilerplate: {
@@ -173,7 +174,12 @@ var options = {
         },
       ],
     }),
-
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'src', 'modules', 'Keepalive', 'index.html'),
+      filename: 'keepalive.html',
+      chunks: ['keepalive'],
+      cache: false,
+    }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'modules', 'Options', 'index.html'),
       filename: 'options.html',

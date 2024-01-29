@@ -1,5 +1,5 @@
-import { Action, MessageType } from "../../constants/constants";
-import { dispatchMessage, dispatchUpdateList } from "./message_dispatcher";
+import { Action } from "../../constants/constants";
+import { dispatchUpdateList } from "./message_dispatcher";
 import { emitRecycleNotification } from "./notification";
 import { recycleTabs } from "./tab_recycle";
 
