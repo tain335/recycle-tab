@@ -40,6 +40,7 @@ specifiers:
   minimatch: ^9.0.3
   mitt: ^3.0.1
   moment: ^2.29.4
+  mui-color-input: ^2.0.3
   nanoid: ^5.0.4
   parse-url: ^9.0.1
   prettier: ^2.8.3
@@ -58,6 +59,7 @@ specifiers:
   tsconfig-paths-webpack-plugin: ^4.1.0
   type-fest: ^3.5.2
   typescript: ^4.9.4
+  web2pdf: link:/Users/yanbo.wu/Documents/projects/web2pdf
   webpack: ^5.75.0
   webpack-cli: ^4.10.0
   webpack-dev-server: ^4.11.1
@@ -75,12 +77,14 @@ dependencies:
   minimatch: 9.0.3
   mitt: 3.0.1
   moment: 2.29.4
+  mui-color-input: 2.0.3_2hujbh2motmx7mowpt7456tx6m
   nanoid: 5.0.4
   parse-url: 9.0.1
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-tiny-virtual-list: 2.2.0_react@18.2.0
   react-virtualized-auto-sizer: 1.0.20_biqbaboplfbrettd7655fr4n2y
+  web2pdf: link:../web2pdf
 
 devDependencies:
   '@babel/core': 7.23.3
@@ -1552,6 +1556,11 @@ packages:
       '@babel/helper-string-parser': 7.23.4
       '@babel/helper-validator-identifier': 7.22.20
       to-fast-properties: 2.0.0
+
+  /@ctrl/tinycolor/4.0.4:
+    resolution: {integrity: sha512-DIjWxEgyP+YGh7Znx9PjsunmpVsAySYRofMUjZCRWUZ1JVS8GHurry6OebnQD2dPviRUTH9VmiupFivS7Ik9ew==}
+    engines: {node: '>=14'}
+    dev: false
 
   /@discoveryjs/json-ext/0.5.7:
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
@@ -5321,6 +5330,28 @@ packages:
   /ms/2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
     dev: true
+
+  /mui-color-input/2.0.3_2hujbh2motmx7mowpt7456tx6m:
+    resolution: {integrity: sha512-rAd040qQ0Y+8dk4gE8kkCiJ/vCgA0j4vv1quJ43BfORTFE3uHarHj0xY1Vo9CPbojtx1f5vW+CjckYPRIZPIRg==}
+    peerDependencies:
+      '@emotion/react': ^11.5.0
+      '@emotion/styled': ^11.3.0
+      '@mui/material': ^5.0.0
+      '@types/react': ^18.0.0
+      react: ^18.0.0
+      react-dom: ^18.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+    dependencies:
+      '@ctrl/tinycolor': 4.0.4
+      '@emotion/react': 11.11.1_vefaa57jiikjg7ztnhkaom6nr4
+      '@emotion/styled': 11.11.0_yaut5gnlglaudc27kvoruyzffy
+      '@mui/material': 5.14.19_fxcnftf4cuvyzzexiq3izoq4ou
+      '@types/react': 18.2.38
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
 
   /multicast-dns/7.2.5:
     resolution: {integrity: sha512-2eznPJP8z2BFLX50tf0LuODrpINqP1RVIm/CObbTcBRITQgmC/TjcREF1NeTBzIcR5XO/ukWo+YHOjBbFwIupg==}

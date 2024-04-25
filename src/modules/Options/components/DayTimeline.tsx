@@ -8,6 +8,8 @@ import { RecycleTab } from "@src/model/recycle_tab";
 import { Checkbox } from "@mui/material";
 import { useControllableValue } from "ahooks";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
+import { PDFMaker } from "@src/components/PDFMaker";
+import { FavoritesDialog } from "./FavoritesDialog";
 
 
 interface TabItemProps {
@@ -39,12 +41,15 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           }} href={tab.url}>{tab.title}</Link>
       </div>
     </div>
-    <div style={{ width: 250, textAlign: 'right', cursor: 'pointer' }} onClick={(e) => {
+    <div style={{ width: 300, textAlign: 'right', cursor: 'pointer' }} onClick={(e) => {
       if (e.currentTarget === e.target) {
         onSelectedChange(tab, !selected);
       }
     }}>
-      {/* <Button style={{ marginRight: 10 }} variant="outlined" size="small">收藏</Button> */}
+      <FavoritesDialog>
+        {(setOpen) => <Button style={{ marginRight: 10 }} variant="outlined" size="small" onClick={() => setOpen(true)}>Favorite</Button>}
+      </FavoritesDialog>
+
       <ConfirmDialog title='Tips' content='Are you sure to remove this tab?'
         onConfirm={() => {
           onRemove(tab)
@@ -53,6 +58,15 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           setOpen(true)
         }}>Remove</Button>}
       </ConfirmDialog>
+      <ConfirmDialog width='100%' title={"PDF Maker"} content={<PDFMaker src={tab.url} width={1200}></PDFMaker>}>
+        {
+          (setVisible) => <Button variant="outlined" size="small" style={{ marginRight: 10 }} onClick={async () => {
+            await PDFMaker.loadFonts();
+            setVisible(true)
+          }}>Print</Button>
+        }
+      </ConfirmDialog>
+
       <Checkbox checked={selected} value={selected} onChange={(e) => {
         onSelectedChange(tab, e.target.checked);
       }}></Checkbox>
@@ -77,7 +91,7 @@ function Day({ time, tabs, split, onRemove, selectedTabs, onSelectedChange }: Da
         <span style={{ position: 'relative', display: 'inline-block', background: '#fff', color: '#999', padding: '0 20px', top: -8 }}>{time.format('YYYY-MM-DD')}</span>
       </div> : <></>}
     <div style={{ display: 'flex', paddingBottom: 5, paddingLeft: 40, paddingRight: 40, boxSizing: 'border-box' }}>
-      <div style={{ width: 120, alignSelf: "start", justifySelf: 'center', fontSize: '16px', textAlign: 'center' }}>
+      <div style={{ flexShrink: 0, width: 120, alignSelf: "start", justifySelf: 'center', fontSize: '16px', textAlign: 'center' }}>
         <div style={{ fontSize: '14px', color: '#999' }}>{time.format('YYYY-MM-DD')}</div>
         <div style={{ fontWeight: 'bold' }}>{time.format('HH:mm')}</div>
       </div>
@@ -194,7 +208,7 @@ export function DayTimeline({ onScrollItem, tabs, selectTime, onRemove, ...props
   previousOffset.current = offset;
 
   return <AutoSizer disableWidth>{
-    ({ height }) => {
+    ({ height }: { height: number }) => {
       return <VirtualList
         width="100%"
         height={height}
@@ -202,13 +216,13 @@ export function DayTimeline({ onScrollItem, tabs, selectTime, onRemove, ...props
         itemSize={computeSize(dayTimeItems)}
         scrollOffset={offset}
         onScroll={(offset, event) => {
-
-          const scrollTabIndex = dayTimeItems.findIndex((item, index) => {
-            if (item.scrollOffset > offset) {
+          // @ts-ignore
+          const scrollTabIndex = dayTimeItems.findLastIndex((item) => {
+            if (item.scrollOffset < offset) {
               return true
             }
           })
-          const scrollTab = dayTimeItems[scrollTabIndex - 1]
+          const scrollTab = dayTimeItems[scrollTabIndex]
           if (scrollTab) {
             onScrollItem?.(scrollTab, offset, getItemsInDay(dayTimeItems, scrollTab.time.clone()))
           } else {

@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import VirtualList, { ScrollDirection } from 'react-tiny-virtual-list';
 import AutoSizer from "react-virtualized-auto-sizer";
 import moment from 'moment';
 import { RecycleTab } from '@src/model/recycle_tab';
 import { DayTimelineItem, computeSize } from './DayTimeline';
 import "./MonthTimeline.css";
+import { useDebounceEffect, useThrottleEffect } from 'ahooks';
 
 const DayBarWidth = 24;
 
@@ -27,6 +28,7 @@ type OnDaySelect = (d: moment.Moment) => void;
 
 interface MonthProps {
   date: moment.Moment,
+  visitDate: moment.Moment,
   data?: DayCount,
   onSelect?: OnDaySelect
 }
@@ -38,11 +40,12 @@ interface DayProps {
   text: string,
   count: number,
   currentDay: boolean,
+  visitDay: boolean;
   weekend: boolean
   onClick?: () => void
 }
 
-function Day({ text, count, currentDay, weekend, onClick }: DayProps) {
+function Day({ text, count, currentDay, weekend, visitDay, onClick }: DayProps) {
   const level = Math.min(10, count ? ~~(count / 10) + 1 : 0);
   const levels: React.ReactNode[] = [];
   for (let i = 0; i < level; i++) {
@@ -52,10 +55,14 @@ function Day({ text, count, currentDay, weekend, onClick }: DayProps) {
     ></div>)
   }
   let borderColor = '#ccc';
+
   if (currentDay) {
     borderColor = '#0958d9';
   } else if (weekend) {
-    borderColor = '#ffccc7'
+    borderColor = '#ffccc7';
+  }
+  if (visitDay) {
+    borderColor = '#eb2f96';
   }
   return <div
     onClick={() => onClick?.()}
@@ -66,7 +73,7 @@ function Day({ text, count, currentDay, weekend, onClick }: DayProps) {
       margin: 2,
       height: 80,
       border: '1px solid #ccc',
-      borderWidth: (currentDay || weekend) ? 2 : 1,
+      borderWidth: (currentDay || weekend || visitDay) ? 2 : 1,
       borderColor: borderColor,
       borderRadius: 4,
       display: 'flex',
@@ -79,7 +86,7 @@ function Day({ text, count, currentDay, weekend, onClick }: DayProps) {
   </div>
 }
 
-function Month({ date, data, onSelect }: MonthProps) {
+function Month({ date, data, visitDate, onSelect }: MonthProps) {
   const dayCount = date.daysInMonth();
   const days: React.ReactNode[] = [];
   let cloneDate = date.clone().startOf('M');
@@ -93,6 +100,7 @@ function Month({ date, data, onSelect }: MonthProps) {
       text={String(i + 1)}
       count={count}
       onClick={() => onSelect?.(selectDate)}
+      visitDay={visitDate.format('YYYY-MM-DD') === key}
       currentDay={currentTime.format('YYYY-MM-DD') === key}
       weekend={cloneDate.isoWeekday() === 6 || cloneDate.isoWeekday() === 7}
     ></Day>)
@@ -118,12 +126,61 @@ export interface MonthTimelineProps {
   tabs: RecycleTab[]
   itemsInDay?: DayTimelineItem[],
   currentOffset?: number,
+  currentTime?: number,
   onSelect?: OnDaySelect
 }
 
-const startTime = moment().subtract(MaxDuration, 'month')
+// 用导数求目前的速度，在衔接上
+function useTweenChange(change: number | undefined): [number | undefined, (offset: number) => void] {
+  const [current, setCurrent] = useState<number | undefined>(undefined);
+  const changeRef = useRef(change ?? 0);
+  const frameId = useRef(-1);
+  useDebounceEffect(() => {
+    if (change === undefined) {
+      return;
+    }
+    if (current === undefined) {
+      setCurrent(change);
+    } else {
+      if (Math.abs(changeRef.current - change) < 120
+        && Math.abs(current - change) < 120
+      ) {
+        return;
+      }
+      changeRef.current = change;
+      cancelAnimationFrame(frameId.current)
+      const start = current;
+      const end = change;
+      const startTime = Date.now();
+      const update = () => {
+        const now = Date.now();
+        const timing = (Math.min(now - startTime, 160) / 160);
+        const progress = Math.sin(Math.PI / 2 * timing);
+        const c = progress * (end - start) + start;
+        setCurrent(c);
+        if (progress === 1) {
+          return;
+        } else {
+          frameId.current = requestAnimationFrame(update);
+        }
+      }
+      frameId.current = requestAnimationFrame(update)
+    }
+  }, [change], { wait: 16 });
+  return [current, (offset: number) => {
+    setCurrent(offset);
+    cancelAnimationFrame(frameId.current)
+  }];
+}
 
-export function MonthTimeline({ tabs, itemsInDay, currentOffset, onSelect }: MonthTimelineProps) {
+export function MonthTimeline({ tabs, itemsInDay, currentTime, currentOffset, onSelect }: MonthTimelineProps) {
+  const startTime = useMemo(() => {
+    if (tabs.length) {
+      return moment(tabs[0].recycleTime * 1000).subtract('6', 'M');
+    } else {
+      return moment().subtract(MaxDuration, 'month');
+    }
+  }, [tabs])
   const offset = useMemo(() => {
     if (itemsInDay?.length) {
       const day = itemsInDay[0].time.clone().startOf('day').diff(startTime.clone().startOf('M'), 'day');
@@ -134,6 +191,7 @@ export function MonthTimeline({ tabs, itemsInDay, currentOffset, onSelect }: Mon
     }
     return undefined;
   }, [itemsInDay, currentOffset]);
+  const [scrollOffset, setScrollOffset] = useTweenChange(offset);
   const monthTimelineItems: Record<string, DayCount> = useMemo(() => {
     const map: Record<string, DayCount> = {}
     tabs.forEach((tab) => {
@@ -151,14 +209,20 @@ export function MonthTimeline({ tabs, itemsInDay, currentOffset, onSelect }: Mon
     })
     return map;
   }, [tabs])
-  return <AutoSizer disableHeight>{
-    ({ width }) => {
+  return <AutoSizer disableHeight key={startTime.valueOf()}>{
+    ({ width }: { width: number }) => {
       return <VirtualList
         className='month-timeline'
         style={{ display: 'flex' }}
         width={width}
         height={118}
-        scrollOffset={offset}
+        scrollOffset={scrollOffset}
+        onScroll={(offset) => {
+          if (scrollOffset && (~~scrollOffset) === ~~offset) {
+            return;
+          }
+          setScrollOffset(offset);
+        }}
         itemCount={MaxDuration + 3}
         itemSize={(index) => {
           const time = startTime.clone().add(index, 'month');
@@ -168,7 +232,7 @@ export function MonthTimeline({ tabs, itemsInDay, currentOffset, onSelect }: Mon
         scrollDirection={ScrollDirection.HORIZONTAL}
         renderItem={({ index, style }) => {
           const time = startTime.clone().add(index, 'month')
-          return <div key={index} style={style}><Month date={time} data={monthTimelineItems[time.format("YYYY-MM")]} onSelect={onSelect}></Month></div>
+          return <div key={index} style={style}><Month visitDate={moment((currentTime ?? 0) * 1000)} date={time} data={monthTimelineItems[time.format("YYYY-MM")]} onSelect={onSelect}></Month></div>
         }}></VirtualList>
     }
   }</AutoSizer>

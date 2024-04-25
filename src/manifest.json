@@ -12,7 +12,18 @@
     "contextMenus",
     "history",
     "tabGroups",
-    "notifications"
+    "notifications",
+    "webRequest",
+    "declarativeNetRequest",
+    "scripting",
+    "webNavigation"
+  ],
+  "declarative_net_request": {
+    "rule_resources": []
+  },
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.bundle.js"
@@ -28,7 +39,8 @@
     {
       "resources": [
         "icon-192.png",
-        "icon-32.png"
+        "icon-32.png",
+        "PingFang-SC-Regular.ttf"
       ],
       "matches": []
     }

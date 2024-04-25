@@ -39,13 +39,20 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 var options = {
   mode: process.env.NODE_ENV || 'development',
   entry: {
-    options: path.join(__dirname, 'src', 'modules', 'Options', 'index.jsx'),
-    popup: path.join(__dirname, 'src', 'modules', 'Popup', 'index.jsx'),
-    keepalive: path.join(__dirname, 'src', 'modules', 'Keepalive', 'index.js'),
-    background: path.join(__dirname, 'src', 'modules', 'Background', 'index.js')
+    options: path.join(__dirname, 'src', 'modules', 'Options', 'index.tsx'),
+    popup: path.join(__dirname, 'src', 'modules', 'Popup', 'index.tsx'),
+    keepalive: path.join(__dirname, 'src', 'modules', 'Keepalive', 'index.ts'),
+    background: {
+      import: path.join(__dirname, 'src', 'modules', 'Background', 'index.ts'),
+      runtime: false
+    },
+    'content-script': {
+      import: path.join(__dirname, 'src', 'scripts', 'content-script.ts'),
+      runtime: false
+    }
   },
   chromeExtensionBoilerplate: {
-    notHotReload: ['background', 'contentScript', 'devtools'],
+    notHotReload: ['background', 'content-script'],
   },
   output: {
     filename: '[name].bundle.js',
@@ -78,10 +85,10 @@ var options = {
         test: new RegExp('.(' + fileExtensions.join('|') + ')$'),
         type: 'asset/resource',
         exclude: /node_modules/,
-        // loader: 'file-loader',
-        // options: {
-        //   name: '[name].[ext]',
-        // },
+        loader: 'file-loader',
+        options: {
+          name: '[name].[ext]',
+        },
       },
       {
         test: /\.html$/,
@@ -169,6 +176,15 @@ var options = {
       patterns: [
         {
           from: 'src/assets/img/icon-32.png',
+          to: path.join(__dirname, 'build'),
+          force: true,
+        },
+      ],
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'src/assets/PingFang-SC-Regular.ttf',
           to: path.join(__dirname, 'build'),
           force: true,
         },

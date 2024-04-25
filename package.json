@@ -24,12 +24,14 @@
     "minimatch": "^9.0.3",
     "mitt": "^3.0.1",
     "moment": "^2.29.4",
+    "mui-color-input": "^2.0.3",
     "nanoid": "^5.0.4",
     "parse-url": "^9.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-tiny-virtual-list": "^2.2.0",
-    "react-virtualized-auto-sizer": "^1.0.20"
+    "react-virtualized-auto-sizer": "^1.0.20",
+    "web2pdf": "link:/Users/yanbo.wu/Documents/projects/web2pdf"
   },
   "devDependencies": {
     "@babel/core": "^7.20.12",

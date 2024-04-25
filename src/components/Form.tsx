@@ -30,7 +30,7 @@ interface FormItemProps {
 export function FormItem({ label, children, required, name, control }: FormItemProps) {
   const context = useContext(FormContext)
   return <div style={{ display: 'flex', alignItems: 'center' }}>
-    {label ? <div style={{ fontSize: '14px', fontWeight: 500, width: context.labelWidth, flex: context.labelWidth ? undefined : 1, }}>{label}</div> : <></>}
+    {label ? <div style={{ fontSize: '14px', fontWeight: 500, width: context.labelWidth, flex: context.labelWidth ? undefined : 1, flexShrink: 0, }}>{label}</div> : <></>}
     <div style={{ flex: 1, textAlign: 'center' }}>
       <FormControl {...control}>
         {children}

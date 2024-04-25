@@ -90,7 +90,7 @@ export class TabCache {
     if (!this.disable) {
       return
     }
-    console.info('purgeStale')
+    // console.info('purgeStale')
     this.cache.purgeStale();
   }
 }

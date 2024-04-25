@@ -11,26 +11,16 @@ import { useMemoizedFn } from 'ahooks';
 import moment from 'moment';
 import { Button, Drawer } from '@mui/material';
 import { ConfirmDialog } from '@src/components/ConfirmDialog';
-// import { minimatch } from 'minimatch'
-
-// console.log(minimatch("zhuanlan.zhihu.com/p/679668297", "**zhihu.com/p/**"))
-
-// import html2canvas from 'html2canvas';
-
-// setTimeout(() => {
-//   html2canvas(document.querySelector('body') as HTMLBodyElement).then((canvas) => {
-//     document.body.append(canvas)
-//   })
-// }, 5000)
 
 interface Props {
-  title: string;
+  title?: string;
 }
 
 const Options: React.FC<Props> = ({ title }: Props) => {
   const [tabs, setTabs] = useState<RecycleTab[]>([]);
   const [itemsInDay, setItemsInDay] = useState<DayTimelineItem[]>([]);
   const [currentOffset, setCurrentOffset] = useState<number>(0);
+  const [currentTime, setCurrentTime] = useState<number>(0);
   const [selectTime, setSelectTime] = useState<moment.Moment>();
   const [selectedTabs, setSelectedTabs] = useState<number[]>([]);
   const [filter, setFilter] = useState('');
@@ -78,6 +68,7 @@ const Options: React.FC<Props> = ({ title }: Props) => {
       tabs={filterTabs}
       itemsInDay={itemsInDay}
       currentOffset={currentOffset}
+      currentTime={currentTime}
       onSelect={(m) => {
         setSelectTime(m);
       }}
@@ -106,11 +97,20 @@ const Options: React.FC<Props> = ({ title }: Props) => {
         onScrollItem={(current, offset, itemsInDay) => {
           setItemsInDay(itemsInDay)
           setCurrentOffset(offset)
+          setCurrentTime(current.time.unix());
         }}></DayTimeline>
     </div>
     <Drawer variant="persistent" open={!!selectedTabs.length} anchor='bottom' hideBackdrop>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', height: 60, margin: '0 160px' }}>
         <Button variant='outlined' size='small' onClick={() => {
+          // selectedTabs.map((id) => tabs.find((t) => t.tabId === id)).forEach((t) => {
+          //   if (t) {
+          //     window.open(t?.url)
+          //   }
+          // })
+          // setSelectedTabs([]);
+        }}>Batch Favorite({selectedTabs.length})</Button>
+        <Button style={{ marginLeft: 10 }} variant='outlined' size='small' onClick={() => {
           selectedTabs.map((id) => tabs.find((t) => t.tabId === id)).forEach((t) => {
             if (t) {
               window.open(t?.url)

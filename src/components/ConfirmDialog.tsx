@@ -1,23 +1,26 @@
 import React from "react";
 import { CDialog } from "./extends";
 import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import { isString } from "lodash";
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   title: React.ReactNode,
   content: React.ReactNode,
   children?: (setOpen: React.Dispatch<React.SetStateAction<boolean>>) => React.ReactNode
   onConfirm?: () => void
   onCancel?: () => void
-  width?: number
+  width?: number | string
 }
 
 export function ConfirmDialog({ title, content, width, onCancel, onConfirm, children }: ConfirmDialogProps) {
-  return <CDialog body={(setOpen) => <>
+  return <CDialog maxWidth='xl' body={(setOpen) => <>
     <DialogTitle>{title}</DialogTitle>
-    <DialogContent style={{ width: width ?? 600 }} >
-      <DialogContentText>
-        {content}
-      </DialogContentText>
+    <DialogContent>
+      <div style={{ width: width ?? 600 }}>
+        {isString(content) ? <DialogContentText>
+          {content}
+        </DialogContentText> : content}
+      </div>
     </DialogContent>
     <DialogActions>
       <Button onClick={() => {
