@@ -2,7 +2,10 @@ import { web2pdf } from 'web2pdf/dist/cjs';
 import { CrossMessager } from "@src/messager/messager";
 import { HostMessages, Target } from '@src/components/PDFMaker';
 import { PageFomat } from 'web2pdf/dist/pagebreak';
+import { nanoid } from 'nanoid';
 
+
+// TODO html2canvas 解释样式错误，错误提示，printing动画
 export interface FrameMessages {
   print: (params: {
     defaultFonts: Uint8Array[],
@@ -10,6 +13,9 @@ export interface FrameMessages {
     target: Target,
     excludes: Target[]
   }) => Promise<void>
+  removeExcludes: (params: Target[]) => Promise<void>;
+  removeTarget: (params: Target) => Promise<void>;
+  highlight: (params?: Target) => Promise<void>;
 }
 
 const messager = new CrossMessager<FrameMessages, HostMessages>((message) => {
@@ -32,6 +38,9 @@ function collectElFontFamiles(el: HTMLElement) {
   return Array.from(fontFamilies.keys());
 }
 
+let lastHighlightTarget: Target | null = null;
+let lastTargetColor: string = '';
+
 messager.registerReceiveActions({
   async print(params) {
     const el = document.querySelector(params.target.selector);
@@ -40,7 +49,7 @@ messager.registerReceiveActions({
       const fontFamilies = collectElFontFamiles(el as HTMLElement);
       const result = await messager.send('resolveFonts', fontFamilies);
       // @ts-ignore
-      web2pdf(el as HTMLElement, {
+      await web2pdf(el as HTMLElement, {
         autoDownload: true,
         defaultFonts: params.defaultFonts,
         fonts: result.resolvedFonts,
@@ -49,8 +58,38 @@ messager.registerReceiveActions({
         format: params.format as PageFomat,
         ignoreElements: excludeElements
       }).then((data) => {
-        console.log(data)
+        return data;
       })
+    }
+  },
+  async removeExcludes(params) {
+    params.forEach((p) => {
+      const div = document.getElementById(p.id ?? '');
+      if (div) {
+        document.body.removeChild(div);
+      }
+    })
+  },
+  async removeTarget(params) {
+    const div = document.getElementById(params.id ?? '');
+    if (div) {
+      document.body.removeChild(div);
+    }
+  },
+  async highlight(params) {
+    if (lastHighlightTarget) {
+      const div = document.getElementById(lastHighlightTarget.id ?? '');
+      if (div) {
+        div.style.backgroundColor = lastTargetColor;
+      }
+    }
+    if (params) {
+      lastHighlightTarget = params;
+      const div = document.getElementById(params.id ?? '');
+      if (div) {
+        lastTargetColor = div.style.backgroundColor ?? '';
+        div.style.backgroundColor = 'orange';
+      }
     }
   },
 })
@@ -90,8 +129,6 @@ function getElSelector(el: HTMLElement): string {
   return str;
 }
 
-let gid = 1;
-// const elMaps = new WeakMap<HTMLElement, number>();
 const PDF_OVERLAY = 'pdf_overlay';
 
 document.body.addEventListener('click', async (event) => {
@@ -103,7 +140,7 @@ document.body.addEventListener('click', async (event) => {
     if (event.pageX >= offsetLeft && event.pageX <= offsetLeft + width && event.pageY >= offsetTop && event.pageY <= offsetTop + height) {
       event.stopPropagation();
       event.preventDefault();
-      const id = gid++;
+      const id = nanoid();
       const selectDivId = 'pdf_selector_' + id;
       const selector = getElSelector(event.target as HTMLElement);
       const action = await messager.send('getAction');
@@ -111,7 +148,7 @@ document.body.addEventListener('click', async (event) => {
       if (action === 'select') {
         const oldTarget = await messager.send('getTarget');
         if (oldTarget) {
-          const div = document.getElementById(oldTarget.id ?? '');
+          const div = document.getElementById(oldTarget.id ?? '')
           if (div) {
             document.body.removeChild(div);
           }
@@ -133,7 +170,6 @@ document.body.addEventListener('click', async (event) => {
           excludes.push({ id: selectDivId, selector: selector })
           addNew = true;
         }
-        console.log(excludes);
         messager.send('exclude', excludes)
       }
       if (addNew) {

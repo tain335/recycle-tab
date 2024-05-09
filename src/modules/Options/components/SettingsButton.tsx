@@ -1,18 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import SettingsIcon from '@mui/icons-material/Settings';
 import Fab from '@mui/material/Fab';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Popover } from '@mui/material';
-import { DeleteOutline, SettingsOutlined } from '@mui/icons-material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Popover } from '@mui/material';
+import { DeleteOutline, SettingsOutlined, StarOutline } from '@mui/icons-material';
 import { MessageType, SettingsValue } from '@src/constants/constants';
 import { frontendEmitter } from "@src/events/frontend";
 import { SettingFormHandle, SettingsForm } from "./SettingsForm";
 import { DefaultSettings } from '@src/constants/constants'
 import { getObjectKey } from "@src/utils/getObjectKey";
-
+import { FavoritesDialog } from "./FavoritesDialog";
+import { ConfirmDialog } from "@src/components/ConfirmDialog";
+import { BatchPDFMaker } from "@src/components/BatchPDFMaker";
+import { FavoriteListValue } from "./FavoritesList";
 
 export function SettingsButton() {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(!!localStorage.getItem("show_config"));
   const anchorEl = useRef<HTMLButtonElement | null>(null);
   const [settings, setSettings] = useState<SettingsValue>({
@@ -20,6 +22,8 @@ export function SettingsButton() {
   });
 
   const settingForm = useRef<SettingFormHandle>(null);
+
+  const [favorite, setFavorite] = useState<FavoriteListValue>();
 
   const handlePopoverClose = () => {
     setPopoverOpen(false)
@@ -52,11 +56,12 @@ export function SettingsButton() {
       style={{ position: 'absolute', right: 60, bottom: 20, zIndex: 1201 }}
       onClick={(event) => {
         anchorEl.current = event.currentTarget;
-        setPopoverOpen(true)
+        setPopoverOpen(!popoverOpen)
       }}>
       <SettingsIcon></SettingsIcon>
     </Fab>
     <Popover
+      keepMounted
       style={{ transform: "translate(-80px, -50px)" }}
       open={popoverOpen}
       anchorEl={anchorEl.current}
@@ -67,14 +72,30 @@ export function SettingsButton() {
       }}
     >
       <List style={{ width: 240 }}>
-        {/* <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <DeleteOutline />
-            </ListItemIcon>
-            <ListItemText primary="Collections" />
-          </ListItemButton>
-        </ListItem> */}
+        <ConfirmDialog title="PDF Makder" confirmText="Print All" width={1000} content={<BatchPDFMaker title={favorite?.name ?? ''} tabs={favorite?.tabs ?? []}></BatchPDFMaker>} onConfirm={async () => { }}>
+          {
+            (setPDFMakerOpen) => <FavoritesDialog
+              printable
+              onPrint={(favorite) => {
+                setFavorite(favorite)
+                setPDFMakerOpen(true)
+              }}>
+              {(setOpen) => <ListItem
+                disablePadding
+                onClick={() => {
+                  setOpen(true)
+                  setPopoverOpen(false)
+                }}>
+                <ListItemButton>
+                  <ListItemIcon>
+                    <StarOutline />
+                  </ListItemIcon>
+                  <ListItemText primary="Favorites" />
+                </ListItemButton>
+              </ListItem>}
+            </FavoritesDialog>
+          }
+        </ConfirmDialog>
         <ListItem disablePadding onClick={async () => {
           setSettingsOpen(true)
           setPopoverOpen(false)
@@ -86,17 +107,26 @@ export function SettingsButton() {
             <ListItemText primary="Settings" />
           </ListItemButton>
         </ListItem>
-        <ListItem disablePadding onClick={async () => {
-          setClearDialogOpen(true)
-          setPopoverOpen(false)
+        <ConfirmDialog title="Tips" content="Are you sure to remove all records?" onConfirm={async () => {
+          try {
+            await chrome.runtime.sendMessage<any>({ type: MessageType.ClearAllTabs })
+            setPopoverOpen(false);
+            frontendEmitter.emit('update_tab_list');
+          } catch (err) {
+
+          }
         }}>
-          <ListItemButton>
-            <ListItemIcon>
-              <DeleteOutline />
-            </ListItemIcon>
-            <ListItemText primary="Clear" />
-          </ListItemButton>
-        </ListItem>
+          {(setOpen) => <ListItem disablePadding onClick={async () => {
+            setOpen(true);
+          }}>
+            <ListItemButton>
+              <ListItemIcon>
+                <DeleteOutline />
+              </ListItemIcon>
+              <ListItemText primary="Clear" />
+            </ListItemButton>
+          </ListItem>}
+        </ConfirmDialog>
       </List>
     </Popover>
     <Dialog open={settingsOpen}>
@@ -121,28 +151,6 @@ export function SettingsButton() {
             setSettingsOpen(false)
           } catch (err) { }
         }}>Confirm</Button>
-      </DialogActions>
-    </Dialog>
-    <Dialog open={clearDialogOpen}>
-      <DialogTitle>Tips</DialogTitle>
-      <DialogContent style={{ width: 600 }} >
-        <DialogContentText>
-          Are you sure to remove all records?
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => {
-          setClearDialogOpen(false)
-        }}>Cancel</Button>
-        <Button onClick={async () => {
-          try {
-            await chrome.runtime.sendMessage<any>({ type: MessageType.ClearAllTabs })
-            setClearDialogOpen(false)
-            frontendEmitter.emit('update_tab_list');
-          } catch (err) {
-
-          }
-        }} autoFocus>Confirm</Button>
       </DialogActions>
     </Dialog>
   </>

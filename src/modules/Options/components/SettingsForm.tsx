@@ -95,7 +95,7 @@ export type SettingFormHandle = {
 interface SettingsFormProps {
   data: SettingsFormValue
 }
-// chrome.runtime.
+
 export const SettingsForm = forwardRef<SettingFormHandle, SettingsFormProps>(function SettingsForm({ data }: SettingsFormProps, ref) {
   const [state, setState] = useSetState<PrimarySettingsValue & {
     recycleExludes: { value: string, done: boolean, error?: boolean, errorText?: string }[]

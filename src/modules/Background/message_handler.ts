@@ -1,4 +1,4 @@
-import { MessageType, SettingsValue } from "../../constants/constants";
+import { FavoriteItem, MessageType, SettingsValue } from "../../constants/constants";
 import { storage, updateCacheFromSettings } from "./tab_recycle";
 
 export class MessageHandler {
@@ -24,6 +24,14 @@ export class MessageHandler {
 
   async removeTabs(ids: number[]) {
     return await storage.removeTabs(ids)
+  }
+
+  async getFavorites() {
+    return await storage.getFavorites()
+  }
+
+  async setFavorites(newFavorites: FavoriteItem[]) {
+    await storage.saveFavorites(newFavorites);
   }
 
 }
@@ -58,6 +66,12 @@ export function initMessageHandler() {
         break;
       case MessageType.RemoveTabs:
         callHandler(h.removeTabs, message.data, sendResponse);
+        break;
+      case MessageType.GetFavorites:
+        callHandler(h.getFavorites, message.data, sendResponse);
+        break;
+      case MessageType.SaveFavorites:
+        callHandler(h.setFavorites, message.data, sendResponse);
         break;
       default:
         sendResponse(new Error("no match message type"));

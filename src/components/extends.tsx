@@ -1,13 +1,19 @@
 import { Dialog } from '@mui/material';
-import React, { ReactNode, useState } from 'react'
+import React, { ReactNode, useLayoutEffect, useState } from 'react'
 
 function withModal<P extends JSX.IntrinsicAttributes>(Component: React.ComponentType<P>) {
   return function Modal(props: Omit<P, 'children' | 'open'> & {
     children?: (setOpen: React.Dispatch<React.SetStateAction<boolean>>) => React.ReactNode,
     body?: ReactNode | ((setOpen: React.Dispatch<React.SetStateAction<boolean>>) => React.ReactNode)
+    onOpen?: () => void;
   }) {
     const [open, setOpen] = useState(false);
-    const { children, body, ...p } = props;
+    useLayoutEffect(() => {
+      if (open) {
+        props.onOpen?.()
+      }
+    }, [open])
+    const { children, body, onOpen, ...p } = props;
     return <>
       {/*@ts-ignore*/}
       <Component

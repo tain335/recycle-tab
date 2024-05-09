@@ -1,4 +1,4 @@
-import { DefaultSettings, SettingsValue } from "@src/constants/constants";
+import { DefaultSettings, FavoriteItem, SettingsValue } from "@src/constants/constants";
 import { RecycleTab } from "../../model/recycle_tab";
 // sync 限制512 MAX_ITEMS，
 //每个小时写入次数 1800 MAX_WRITE_OPERATIONS_PER_HOUR
@@ -60,6 +60,14 @@ export class TabStorage {
 
   async saveUserSettings(data: any) {
     return await this.set('$user_settings', data);
+  }
+
+  async saveFavorites(favorites: FavoriteItem[]) {
+    await this.set('$favorites', favorites);
+  }
+
+  async getFavorites(): Promise<FavoriteItem[]> {
+    return await this.get('$favorites') ?? []
   }
 
   async saveTab(tab: RecycleTab) {

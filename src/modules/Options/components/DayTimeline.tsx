@@ -1,5 +1,5 @@
 import moment from "moment";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import VirtualList from 'react-tiny-virtual-list';
 import AutoSizer from "react-virtualized-auto-sizer";
 import Button from '@mui/material/Button';
@@ -8,8 +8,9 @@ import { RecycleTab } from "@src/model/recycle_tab";
 import { Checkbox } from "@mui/material";
 import { useControllableValue } from "ahooks";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
-import { PDFMaker } from "@src/components/PDFMaker";
+import { PDFMaker, PrintUpdateState } from "@src/components/PDFMaker";
 import { FavoritesDialog } from "./FavoritesDialog";
+import { readBlobAsUint8Array } from "@src/utils/readBlobAsUint8Array";
 
 
 interface TabItemProps {
@@ -20,6 +21,8 @@ interface TabItemProps {
 }
 
 function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
+  const [printState, setPrintState] = useState<PrintUpdateState>();
+  const [printing, setPrinting] = useState(false);
   return <div style={{ display: "flex", marginBottom: 10, background: selected ? '#e6f4ff' : '' }}>
     <div style={{ lineHeight: '32px', fontSize: '16px', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={(e) => {
       if (e.currentTarget === e.target) {
@@ -46,28 +49,65 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
         onSelectedChange(tab, !selected);
       }
     }}>
-      <FavoritesDialog>
+      <FavoritesDialog favoriteTabs={[tab]}>
         {(setOpen) => <Button style={{ marginRight: 10 }} variant="outlined" size="small" onClick={() => setOpen(true)}>Favorite</Button>}
       </FavoritesDialog>
-
-      <ConfirmDialog title='Tips' content='Are you sure to remove this tab?'
-        onConfirm={() => {
-          onRemove(tab)
-        }}>
-        {(setOpen) => <Button style={{ marginRight: 10 }} variant="outlined" size="small" onClick={(e) => {
-          setOpen(true)
-        }}>Remove</Button>}
-      </ConfirmDialog>
-      <ConfirmDialog width='100%' title={"PDF Maker"} content={<PDFMaker src={tab.url} width={1200}></PDFMaker>}>
+      <ConfirmDialog
+        width='100%'
+        title={"PDF Maker"}
+        confirmText="Print"
+        confirmLoading={printing}
+        confirmDisabled={!printState?.pageSettings.targetElement || printing}
+        onConfirm={async () => {
+          try {
+            if (!printState?.pageSettings.targetElement) {
+              return;
+            }
+            setPrinting(true);
+            const fonts = PDFMaker.getFonts()[printState.printSettings.defaultFont] ?? [];
+            const loadedFontsData = await Promise.all(fonts.map(async (f) => {
+              return await readBlobAsUint8Array(await f.blob())
+            }));
+            await printState.messager.send('print', {
+              defaultFonts: loadedFontsData,
+              format: printState.printSettings.page.format,
+              target: printState.pageSettings.targetElement,
+              excludes: printState.pageSettings.excludeElements
+            });
+          } catch (err) {
+            throw err
+          } finally {
+            setPrinting(false)
+          }
+        }}
+        content={<PDFMaker
+          waiting={printing}
+          waitingText="Printing..."
+          src={tab.url}
+          width={1000}
+          onUpdate={(state) => {
+            setPrintState(state);
+          }}></PDFMaker>}>
         {
           (setVisible) => <Button variant="outlined" size="small" style={{ marginRight: 10 }} onClick={async () => {
             await PDFMaker.loadFonts();
             setVisible(true)
+            setPrinting(false)
           }}>Print</Button>
         }
       </ConfirmDialog>
 
-      <Checkbox checked={selected} value={selected} onChange={(e) => {
+      <ConfirmDialog title='Tips' content='Are you sure to remove this tab?'
+        onConfirm={async () => {
+          onRemove(tab)
+        }}>
+        {(setOpen) => <Button color="error" style={{ marginRight: 10 }} variant="outlined" size="small" onClick={(e) => {
+          setOpen(true)
+        }}>Remove</Button>}
+      </ConfirmDialog>
+
+
+      <Checkbox checked={selected} onChange={(e) => {
         onSelectedChange(tab, e.target.checked);
       }}></Checkbox>
       {/* <Button style={{ marginRight: 10 }} variant="outlined" size="small">排除</Button> */}

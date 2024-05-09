@@ -11,6 +11,7 @@ import { useMemoizedFn } from 'ahooks';
 import moment from 'moment';
 import { Button, Drawer } from '@mui/material';
 import { ConfirmDialog } from '@src/components/ConfirmDialog';
+import { FavoritesDialog } from './components/FavoritesDialog';
 
 interface Props {
   title?: string;
@@ -102,14 +103,16 @@ const Options: React.FC<Props> = ({ title }: Props) => {
     </div>
     <Drawer variant="persistent" open={!!selectedTabs.length} anchor='bottom' hideBackdrop>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', height: 60, margin: '0 160px' }}>
-        <Button variant='outlined' size='small' onClick={() => {
-          // selectedTabs.map((id) => tabs.find((t) => t.tabId === id)).forEach((t) => {
-          //   if (t) {
-          //     window.open(t?.url)
-          //   }
-          // })
-          // setSelectedTabs([]);
-        }}>Batch Favorite({selectedTabs.length})</Button>
+        <FavoritesDialog
+          favoriteTabs={selectedTabs.map((id) => tabs.find((t) => t.tabId === id)).filter(Boolean) as RecycleTab[]}
+          onConfirm={async () => {
+            setSelectedTabs([])
+          }}>
+          {(setOpen) => <Button variant='outlined' size='small' onClick={() => {
+            setOpen(true);
+          }}>Batch Favorite({selectedTabs.length})</Button>}
+        </FavoritesDialog>
+
         <Button style={{ marginLeft: 10 }} variant='outlined' size='small' onClick={() => {
           selectedTabs.map((id) => tabs.find((t) => t.tabId === id)).forEach((t) => {
             if (t) {
@@ -119,8 +122,8 @@ const Options: React.FC<Props> = ({ title }: Props) => {
           setSelectedTabs([]);
         }}>Batch Open({selectedTabs.length})</Button>
         <ConfirmDialog title='Tips' content='Are you sure to remove these tabs?'
-          onConfirm={() => {
-            chrome.runtime.sendMessage({ type: MessageType.RemoveTabs, data: selectedTabs });
+          onConfirm={async () => {
+            await chrome.runtime.sendMessage({ type: MessageType.RemoveTabs, data: selectedTabs });
             setSelectedTabs([])
             frontendEmitter.emit('update_tab_list');
           }}>

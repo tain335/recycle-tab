@@ -1,3 +1,5 @@
+import { RecycleTab } from "@src/model/recycle_tab";
+
 export enum Action {
   TriggerRecycleTab = 'trigger_recycle_tab'
 }
@@ -9,7 +11,9 @@ export enum MessageType {
   ClearAllTabs = 'clear_all_tabs',
   UpdateTabList = 'update_tab_list',
   ShowConfig = 'show_config',
-  RemoveTabs = 'remove_tabs'
+  RemoveTabs = 'remove_tabs',
+  GetFavorites = 'get_favorites',
+  SaveFavorites = 'save_favorites'
 }
 
 
@@ -30,4 +34,11 @@ export const DefaultSettings: SettingsValue = {
   recycleStart: 10,
   recycleExludes: [],
   recycleIncludes: []
+}
+
+export type FavoriteItem = {
+  id: string;
+  name: string;
+  done: boolean,
+  tabs: RecycleTab[]
 }

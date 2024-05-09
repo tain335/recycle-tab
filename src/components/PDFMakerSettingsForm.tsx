@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Form, FormItem } from './Form';
-import { Autocomplete, Input, List, MenuItem, Select, Slider, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Autocomplete, Slider, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { LocationDisabled, LocationSearching } from '@mui/icons-material';
 import { MuiColorInput } from 'mui-color-input';
 import { useControllableValue } from 'ahooks';
-import { LocalFont } from './PDFMaker';
+import { LocalFont, Target } from './PDFMaker';
+import { TargetList } from './TargetList';
+import { PageFormats } from 'web2pdf';
+import { capitalize } from 'lodash';
 
 type Size = {
   width: number;
@@ -15,14 +18,8 @@ export type PDFPageSettingsFormValue = {
   selectAction: 'select' | 'deselect',
   window: Size;
   scale: number;
-  excludeElements: {
-    id?: string,
-    selector: string
-  }[];
-  targetElement: {
-    id?: string,
-    selector: string
-  } | null;
+  excludeElements: Target[];
+  targetElement: Target | null;
 }
 
 export type PDFPrintSettingsFormValue = {
@@ -41,6 +38,7 @@ interface PDFMakerPrintSettingsFormProps {
 }
 
 interface SizeInputProps {
+  disabled?: boolean;
   value?: Size,
   onChange?: (s: Size) => void;
   style?: React.CSSProperties;
@@ -53,11 +51,12 @@ interface NumberInputProps {
 interface NumberInputProps {
   value?: number
   onChange?: (v: number) => void
+  disabled?: boolean;
 }
 
 export function NumberInput(props: NumberInputProps) {
   const [innerValue, setInnerValue] = useControllableValue(props, { defaultValue: 0 })
-  return <TextField style={props.style} size='small' value={innerValue} onChange={(e) => {
+  return <TextField disabled={props.disabled} style={props.style} size='small' value={innerValue} onChange={(e) => {
     if (!isNaN(Number(e.target.value))) {
       setInnerValue(Number(e.target.value))
     }
@@ -66,10 +65,10 @@ export function NumberInput(props: NumberInputProps) {
 
 export function SizeInput(props: SizeInputProps) {
   const [innerValue, setInnerValue] = useControllableValue<Size>(props, { defaultValue: { width: 0, height: 0 } });
-  return <div style={{ transformOrigin: 'left center', transform: 'scale(0.8)', whiteSpace: 'nowrap' }}>
-    <NumberInput style={{ display: 'inline-block', width: 100, verticalAlign: 'middle' }} value={innerValue.width} onChange={(v) => {
+  return <div style={{ transformOrigin: 'left center', transform: 'scale(0.788)', whiteSpace: 'nowrap' }}>
+    <NumberInput disabled={props.disabled} style={{ display: 'inline-block', width: 100, verticalAlign: 'middle' }} value={innerValue.width} onChange={(v) => {
       setInnerValue({ ...innerValue, width: Number(v) })
-    }}></NumberInput><span style={{ display: 'inline-block', margin: '0 8px' }}>X</span><NumberInput style={{ display: 'inline-block', width: 100, verticalAlign: 'middle' }} value={innerValue.height} onChange={(v) => {
+    }}></NumberInput><span style={{ display: 'inline-block', margin: '0 8px' }}>X</span><NumberInput disabled={props.disabled} style={{ display: 'inline-block', width: 100, verticalAlign: 'middle' }} value={innerValue.height} onChange={(v) => {
       setInnerValue({ ...innerValue, height: Number(v) })
     }}></NumberInput>
   </div>
@@ -84,8 +83,8 @@ export function PDFMakerPrintSettingsForm(props: PDFMakerPrintSettingsFormProps)
       page: {
         format: 'a4',
         size: {
-          width: 0,
-          height: 0,
+          width: PageFormats['a4'][0],
+          height: PageFormats['a4'][1],
         }
       }
     }
@@ -119,16 +118,38 @@ export function PDFMakerPrintSettingsForm(props: PDFMakerPrintSettingsFormProps)
               id: 'custom',
               label: 'Custom Size'
             },
-            {
-              id: 'a4',
-              label: 'a4'
-            }
+            ...Object.keys(PageFormats).map((format) => ({ id: format, label: capitalize(format) }))
           ]}
+          onChange={(_, option) => {
+            if (option.id === 'custom') {
+              setInnerValue({
+                ...innerValue,
+                page: {
+                  format: option.id,
+                  size: {
+                    width: PageFormats['a4'][0],
+                    height: PageFormats['a4'][1]
+                  }
+                }
+              })
+            } else {
+              setInnerValue({
+                ...innerValue,
+                page: {
+                  format: option.id,
+                  size: {
+                    width: PageFormats[option.id as keyof typeof PageFormats][0],
+                    height: PageFormats[option.id as keyof typeof PageFormats][1]
+                  }
+                }
+              })
+            }
+          }}
           isOptionEqualToValue={(options, value) => options.id === value.id}
-          value={{ id: innerValue.page.format, label: innerValue.page.format }}
+          value={{ id: innerValue.page.format, label: capitalize(innerValue.page.format) }}
           renderInput={(params) => <TextField {...params} />}
         ></Autocomplete>
-        <SizeInput value={innerValue.page.size} onChange={(v) => {
+        <SizeInput disabled={innerValue.page.format !== 'custom'} value={innerValue.page.size} onChange={(v) => {
           setInnerValue({ ...innerValue, page: { format: '', size: v } })
         }}></SizeInput>
       </div>
@@ -139,6 +160,9 @@ export function PDFMakerPrintSettingsForm(props: PDFMakerPrintSettingsFormProps)
 interface PDFMakerPageSettingsFormProps {
   value?: PDFPageSettingsFormValue
   onChange?: (v: PDFPageSettingsFormValue) => void;
+  onDeleteTarget?: (index: number, target: Target) => void;
+  onDeleteExclude?: (index: number, target: Target) => void;
+  onHighlight?: (target: Target | undefined) => void;
 }
 
 export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
@@ -183,10 +207,27 @@ export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
       <Slider value={innerValue.scale} onChange={(e, v) => setInnerValue({ ...innerValue, scale: v as number })} min={0.1} max={1} step={0.1}></Slider>
     </FormItem>
     <FormItem label='Target Element'>
-      {innerValue.targetElement?.selector}
+      {innerValue.targetElement ? <TargetList
+        targets={!innerValue.targetElement ? [] : [innerValue.targetElement]}
+        onHover={(index, target) => {
+          props.onHighlight?.(target);
+        }}
+        onDelete={(index, target) => {
+          props.onDeleteTarget?.(index, target);
+        }}></TargetList> : <span style={{ padding: '13px 0', color: '#999' }}>{'<Empty>'}</span>}
     </FormItem>
     <FormItem label='Exclude Elements'>
-      <List></List>
+      {
+        innerValue.excludeElements?.length ?
+          <TargetList
+            targets={!innerValue.excludeElements ? [] : innerValue.excludeElements}
+            onHover={(index, target) => {
+              props.onHighlight?.(target);
+            }}
+            onDelete={(index, target) => {
+              props.onDeleteExclude?.(index, target);
+            }}
+          ></TargetList> : <span style={{ padding: '13px 0', color: '#999' }}>{'<Empty>'}</span>}
     </FormItem>
   </Form>
 }
