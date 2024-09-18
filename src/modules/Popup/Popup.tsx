@@ -6,6 +6,9 @@ import './Popup.css';
 import { FormItem, Form } from '@src/components/Form';
 import { SettingsControl, SettingsSubForm, validateSubSettings } from '../Options/components/SettingsForm';
 import { MessageType, PrimarySettingsValue } from '@src/constants/constants';
+import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
+import PrintIcon from '@mui/icons-material/Print';
+import StorageIcon from '@mui/icons-material/Storage';
 
 function Popup() {
   const [settings, setSettings] = useState<PrimarySettingsValue>({
@@ -21,7 +24,7 @@ function Popup() {
     })()
   }, []);
   return (
-    <div className="App" style={{ padding: 16 }}>
+    FEATURE_RECYCLE ? <div className="App" style={{ padding: 16 }}>
       <Stack spacing={1}>
         <Form>
           <SettingsSubForm value={settings} control={settingsControl} onChange={(v) => {
@@ -34,9 +37,9 @@ function Popup() {
           }}></SettingsSubForm>
           <FormItem label='Recycle Exclude/Include'>
             <Button size='small' style={{ width: '100%' }} onClick={() => {
-              window.localStorage.setItem('show_config', '1');
-              chrome.runtime.openOptionsPage()
-
+              chrome.storage.local.set({ ['$' + MessageType.ShowConfig]: '1' }, () => {
+                chrome.runtime.openOptionsPage();
+              });
             }}>Config</Button>
           </FormItem>
           {/* <FormItem label='Recycle Quick Action'>
@@ -54,6 +57,30 @@ function Popup() {
           </FormItem>
         </Form>
       </Stack>
+    </div> : <div className="App" style={{ padding: 8 }}>
+      <MenuList>
+        <MenuItem onClick={() => {
+          chrome.runtime.openOptionsPage()
+        }}>
+          <ListItemIcon>
+            <StorageIcon fontSize='small' style={{ color: 'rgb(103, 194, 58)' }}></StorageIcon>
+          </ListItemIcon>
+          <ListItemText style={{ color: '#333' }}>View Stash</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={async () => {
+          var tabs = await chrome.tabs.query({ highlighted: true, active: true, currentWindow: true });
+          if (tabs.length) {
+            chrome.storage.local.set({ ['$' + MessageType.ShowPrinter]: tabs[0].url }, () => {
+              chrome.runtime.openOptionsPage();
+            });
+          }
+        }}>
+          <ListItemIcon>
+            <PrintIcon fontSize='small' style={{ color: 'rgb(103, 194, 58)' }}></PrintIcon>
+          </ListItemIcon>
+          <ListItemText style={{ color: '#333' }}>Print Current Page</ListItemText>
+        </MenuItem>
+      </MenuList>
     </div>
   );
 };

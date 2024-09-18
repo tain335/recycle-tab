@@ -1,7 +1,9 @@
 import { RecycleTab } from "@src/model/recycle_tab";
 
 export enum Action {
-  TriggerRecycleTab = 'trigger_recycle_tab'
+  TriggerRecycleTab = 'trigger_recycle_tab',
+  TriggerStatshTab = 'trigger_stash_tab',
+  TriggerPrintTab = 'trigger_print_tab'
 }
 
 export enum MessageType {
@@ -11,6 +13,7 @@ export enum MessageType {
   ClearAllTabs = 'clear_all_tabs',
   UpdateTabList = 'update_tab_list',
   ShowConfig = 'show_config',
+  ShowPrinter = 'show_printer',
   RemoveTabs = 'remove_tabs',
   GetFavorites = 'get_favorites',
   SaveFavorites = 'save_favorites'

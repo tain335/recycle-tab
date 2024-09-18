@@ -12,7 +12,6 @@ var webpack = require('webpack'),
 delete config.chromeExtensionBoilerplate;
 
 config.mode = 'production';
-
 var packageInfo = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
 
 config.plugins = (config.plugins || []).concat(
@@ -21,7 +20,6 @@ config.plugins = (config.plugins || []).concat(
     path: path.join(__dirname, '../', 'zip'),
   })
 );
-
 webpack(config, function (err, stats) {
   if (err) throw err;
   if (stats.errors) throw stats.errors

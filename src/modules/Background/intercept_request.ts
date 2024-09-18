@@ -10,6 +10,20 @@ export async function initInterceptRequest() {
         action: {
           // @ts-ignore
           "type": "modifyHeaders",
+          requestHeaders: [
+            {
+              // @ts-ignore
+              header: 'Sec-Fetch-Dest', operation: 'set', value: 'document',
+            },
+            {
+              // @ts-ignore
+              header: 'Sec-Fetch-Mode', operation: 'set', value: 'navigate',
+            },
+            {
+              // @ts-ignore
+              header: 'Sec-Fetch-Site', operation: 'set', value: 'same-origin',
+            },
+          ],
           responseHeaders: [
             {
               // @ts-ignore

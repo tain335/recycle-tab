@@ -1,5 +1,4 @@
 import { nanoid } from "nanoid";
-import icon from "../../assets/img/icon-192.png"
 
 let prevNotificationId = ""
 
@@ -9,7 +8,7 @@ export function emitErrorNotification(err: Error) {
   }
   const notificationId = nanoid();
   chrome.notifications.create(notificationId, {
-    iconUrl: icon,
+    iconUrl: chrome.runtime.getURL("/icon-192.png"),
     title: 'Recycle Tabs Error',
     message: err.toString(),
     type: 'basic',
@@ -23,8 +22,22 @@ export function emitRecycleNotification(content: string) {
   }
   const notificationId = nanoid();
   chrome.notifications.create(notificationId, {
-    iconUrl: icon,
+    iconUrl: chrome.runtime.getURL("/icon-192.png"),
     title: 'Recycle Tabs Process',
+    message: content,
+    type: 'basic',
+  });
+  prevNotificationId = notificationId;
+}
+
+export function emitStashNotification(content: string) {
+  if (prevNotificationId) {
+    chrome.notifications.clear(prevNotificationId)
+  }
+  const notificationId = nanoid();
+  chrome.notifications.create(notificationId, {
+    iconUrl: chrome.runtime.getURL("/icon-192.png"),
+    title: 'Stash Page Success',
     message: content,
     type: 'basic',
   });

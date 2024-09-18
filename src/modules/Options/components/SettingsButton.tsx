@@ -10,13 +10,17 @@ import { DefaultSettings } from '@src/constants/constants'
 import { getObjectKey } from "@src/utils/getObjectKey";
 import { FavoritesDialog } from "./FavoritesDialog";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
-import { BatchPDFMaker } from "@src/components/BatchPDFMaker";
+import { BatchPDFMaker, BatchPDFMakerRef, BatchPrintState } from "@src/components/BatchPDFMaker";
 import { FavoriteListValue } from "./FavoritesList";
+import { useCrossMessage } from "@src/hooks/useCrossMessage";
 
 export function SettingsButton() {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(!!localStorage.getItem("show_config"));
+  const config = useCrossMessage(MessageType.ShowConfig);
+  const [settingsOpen, setSettingsOpen] = useState(!!config);
+  const batchPDFMakerRef = useRef<BatchPDFMakerRef>(null);
   const anchorEl = useRef<HTMLButtonElement | null>(null);
+  const [batchPrintState, setBatchPrintState] = useState(BatchPrintState.Pending);
   const [settings, setSettings] = useState<SettingsValue>({
     ...DefaultSettings
   });
@@ -31,23 +35,17 @@ export function SettingsButton() {
   }
 
   useEffect(() => {
+    if (config) {
+      setSettingsOpen(true);
+    }
+  }, [config]);
+
+  useEffect(() => {
     (async () => {
       const settings = await chrome.runtime.sendMessage({ type: MessageType.GetSettings });
       setSettings({ ...settings })
-    })()
-
-    localStorage.removeItem("show_config")
-    const storageListener = (event: StorageEvent) => {
-      if (event.key === "show_config" && event.newValue === "1") {
-        setSettingsOpen(true)
-        localStorage.removeItem("show_config")
-      }
-    };
-    window.addEventListener("storage", storageListener)
-    return () => {
-      window.removeEventListener("storage", storageListener)
-    }
-  }, [])
+    })();
+  }, []);
 
   return <>
     <Fab
@@ -72,7 +70,23 @@ export function SettingsButton() {
       }}
     >
       <List style={{ width: 240 }}>
-        <ConfirmDialog title="PDF Makder" confirmText="Print All" width={1000} content={<BatchPDFMaker title={favorite?.name ?? ''} tabs={favorite?.tabs ?? []}></BatchPDFMaker>} onConfirm={async () => { }}>
+        <ConfirmDialog title="PDF Maker"
+          confirmText="Print All"
+          confirmTips={batchPrintState === BatchPrintState.Pending ? 'Please set all page settings' : ''}
+          confirmDisabled={batchPrintState !== BatchPrintState.Ready}
+          confirmLoading={batchPrintState === BatchPrintState.Working}
+          width={1100}
+          content={<BatchPDFMaker
+            onStateChange={(state) => {
+              setBatchPrintState(state);
+            }}
+            ref={batchPDFMakerRef}
+            title={favorite?.name ?? ''}
+            tabs={favorite?.tabs ?? []}
+          ></BatchPDFMaker>}
+          onConfirm={async () => {
+            await batchPDFMakerRef.current?.printAll();
+          }}>
           {
             (setPDFMakerOpen) => <FavoritesDialog
               printable
@@ -83,8 +97,8 @@ export function SettingsButton() {
               {(setOpen) => <ListItem
                 disablePadding
                 onClick={() => {
-                  setOpen(true)
-                  setPopoverOpen(false)
+                  setOpen(true);
+                  setPopoverOpen(false);
                 }}>
                 <ListItemButton>
                   <ListItemIcon>
@@ -96,7 +110,7 @@ export function SettingsButton() {
             </FavoritesDialog>
           }
         </ConfirmDialog>
-        <ListItem disablePadding onClick={async () => {
+        {FEATURE_RECYCLE ? <ListItem disablePadding onClick={async () => {
           setSettingsOpen(true)
           setPopoverOpen(false)
         }}>
@@ -106,7 +120,7 @@ export function SettingsButton() {
             </ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItemButton>
-        </ListItem>
+        </ListItem> : <></>}
         <ConfirmDialog title="Tips" content="Are you sure to remove all records?" onConfirm={async () => {
           try {
             await chrome.runtime.sendMessage<any>({ type: MessageType.ClearAllTabs })
@@ -146,7 +160,6 @@ export function SettingsButton() {
             if (newSettings) {
               await chrome.runtime.sendMessage({ type: MessageType.UpdateSettings, data: newSettings })
               setSettings(newSettings);
-
             }
             setSettingsOpen(false)
           } catch (err) { }

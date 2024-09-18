@@ -12,6 +12,7 @@ import moment from 'moment';
 import { Button, Drawer } from '@mui/material';
 import { ConfirmDialog } from '@src/components/ConfirmDialog';
 import { FavoritesDialog } from './components/FavoritesDialog';
+import { PrintPageDialog } from './components/PrintPageDialog';
 
 interface Props {
   title?: string;
@@ -146,6 +147,7 @@ const Options: React.FC<Props> = ({ title }: Props) => {
       </div>
     </Drawer >
     <SettingsButton></SettingsButton>
+    <PrintPageDialog></PrintPageDialog>
   </div >;
 };
 

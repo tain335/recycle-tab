@@ -1,15 +1,17 @@
 {
   "name": "chrome-extension-recycle-tab",
   "version": "1.0.0",
-  "description": "A chrome extension boilerplate built with React 18, Webpack 5, and Webpack Dev Server 4",
+  "description": "Converts HTML to high-quality PDFs, retaining fonts, allows specific area selection, and merges multiple pages into one PDF.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lxieyang/chrome-extension-boilerplate-react.git"
+    "url": "https://github.com/tain335/recycle-tab.git"
   },
   "scripts": {
-    "build": "node utils/build.js",
+    "build": "export NODE_ENV=production && node utils/build.js",
+    "build:recycle": "export features=recycle,advanced && export NODE_ENV=production && node utils/build.js",
     "start": "node utils/webserver.js",
+    "start:recycle": "export features=recycle,advanced && node utils/webserver.js",
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
   },
   "dependencies": {

@@ -23,8 +23,8 @@ export class CrossMessager<ReceiverMessages extends CrossMessages<ReceiverMessag
 
   constructor(private post: (message: any) => void) {
     const onMessageHandler = (event: WindowEventMap['message']) => {
-      console.info("receive message", event);
       if ((event.data as CrossMessage).type === CROSS_MESSAGE) {
+        console.info("receive message", event);
         this.dispatch(event.data as CrossMessage);
       }
     };
@@ -59,10 +59,11 @@ export class CrossMessager<ReceiverMessages extends CrossMessages<ReceiverMessag
             seq: message.seq
           });
         }).catch((err) => {
+          debugger;
           this.post({
             type: CROSS_MESSAGE,
             action: RESPONSE_ACTION,
-            err,
+            err: err.stack,
             seq: message.seq
           });
         })

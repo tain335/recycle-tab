@@ -1,5 +1,5 @@
 
-import React, { useCallback, useContext } from 'react';
+import React, { useContext } from 'react';
 import { FormHelperText, FormControl as MFormControl } from '@mui/material';
 
 interface FormControlProps {
@@ -25,11 +25,12 @@ interface FormItemProps {
   children: React.ReactNode,
   name?: string
   control?: Omit<FormControlProps, 'children'>
+  style?: React.CSSProperties
 }
 
-export function FormItem({ label, children, required, name, control }: FormItemProps) {
+export function FormItem({ label, children, required, name, control, style }: FormItemProps) {
   const context = useContext(FormContext)
-  return <div style={{ display: 'flex', alignItems: 'center' }}>
+  return <div style={{ display: 'flex', alignItems: 'center', ...style }}>
     {label ? <div style={{ fontSize: '14px', fontWeight: 500, width: context.labelWidth, flex: context.labelWidth ? undefined : 1, flexShrink: 0, }}>{label}</div> : <></>}
     <div style={{ flex: 1, textAlign: 'center' }}>
       <FormControl {...control}>

@@ -9,6 +9,7 @@ var { CleanWebpackPlugin } = require('clean-webpack-plugin');
 var ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 var ReactRefreshTypeScript = require('react-refresh-typescript');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const { DefinePlugin } = require('webpack');
 
 const ASSET_PATH = process.env.ASSET_PATH || '/';
 
@@ -140,6 +141,10 @@ var options = {
   },
   plugins: [
     isDevelopment && new ReactRefreshWebpackPlugin(),
+    new DefinePlugin({
+      'FEATURE_RECYCLE': process.env.features?.split(',').includes('recycle') ?? false,
+      'FEATURE_ADVANCED': process.env.features?.split(',').includes('advanced') ?? false,
+    }),
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     // expose and write the allowed env vars on the compiled bundle
@@ -176,15 +181,6 @@ var options = {
       patterns: [
         {
           from: 'src/assets/img/icon-32.png',
-          to: path.join(__dirname, 'build'),
-          force: true,
-        },
-      ],
-    }),
-    new CopyWebpackPlugin({
-      patterns: [
-        {
-          from: 'src/assets/PingFang-SC-Regular.ttf',
           to: path.join(__dirname, 'build'),
           force: true,
         },

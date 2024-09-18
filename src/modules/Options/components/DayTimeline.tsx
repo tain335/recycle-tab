@@ -8,10 +8,8 @@ import { RecycleTab } from "@src/model/recycle_tab";
 import { Checkbox } from "@mui/material";
 import { useControllableValue } from "ahooks";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
-import { PDFMaker, PrintUpdateState } from "@src/components/PDFMaker";
+import { PDFMaker, PDFMakerRef, PrintUpdateState, loadFonts } from "@src/components/PDFMaker";
 import { FavoritesDialog } from "./FavoritesDialog";
-import { readBlobAsUint8Array } from "@src/utils/readBlobAsUint8Array";
-
 
 interface TabItemProps {
   tab: RecycleTab,
@@ -22,9 +20,10 @@ interface TabItemProps {
 
 function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
   const [printState, setPrintState] = useState<PrintUpdateState>();
+  const pdfMakerRef = useRef<PDFMakerRef>(null);
   const [printing, setPrinting] = useState(false);
   return <div style={{ display: "flex", marginBottom: 10, background: selected ? '#e6f4ff' : '' }}>
-    <div style={{ lineHeight: '32px', fontSize: '16px', cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={(e) => {
+    <div style={{ lineHeight: '32px', fontSize: '16px', cursor: 'pointer', flex: 1 }} onClick={(e) => {
       if (e.currentTarget === e.target) {
         onSelectedChange(tab, !selected);
       }
@@ -57,23 +56,14 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
         title={"PDF Maker"}
         confirmText="Print"
         confirmLoading={printing}
-        confirmDisabled={!printState?.pageSettings.targetElement || printing}
+        confirmDisabled={!printState?.settings.pageSettings.targetElement || printing}
         onConfirm={async () => {
           try {
-            if (!printState?.pageSettings.targetElement) {
+            if (!printState?.settings.pageSettings.targetElement) {
               return;
             }
             setPrinting(true);
-            const fonts = PDFMaker.getFonts()[printState.printSettings.defaultFont] ?? [];
-            const loadedFontsData = await Promise.all(fonts.map(async (f) => {
-              return await readBlobAsUint8Array(await f.blob())
-            }));
-            await printState.messager.send('print', {
-              defaultFonts: loadedFontsData,
-              format: printState.printSettings.page.format,
-              target: printState.pageSettings.targetElement,
-              excludes: printState.pageSettings.excludeElements
-            });
+            await pdfMakerRef.current?.print();
           } catch (err) {
             throw err
           } finally {
@@ -81,16 +71,17 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           }
         }}
         content={<PDFMaker
+          ref={pdfMakerRef}
           waiting={printing}
           waitingText="Printing..."
           src={tab.url}
-          width={1000}
+          width={1100}
           onUpdate={(state) => {
             setPrintState(state);
           }}></PDFMaker>}>
         {
           (setVisible) => <Button variant="outlined" size="small" style={{ marginRight: 10 }} onClick={async () => {
-            await PDFMaker.loadFonts();
+            await loadFonts();
             setVisible(true)
             setPrinting(false)
           }}>Print</Button>
@@ -110,7 +101,6 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
       <Checkbox checked={selected} onChange={(e) => {
         onSelectedChange(tab, e.target.checked);
       }}></Checkbox>
-      {/* <Button style={{ marginRight: 10 }} variant="outlined" size="small">排除</Button> */}
     </div>
   </div>
 }
@@ -131,11 +121,11 @@ function Day({ time, tabs, split, onRemove, selectedTabs, onSelectedChange }: Da
         <span style={{ position: 'relative', display: 'inline-block', background: '#fff', color: '#999', padding: '0 20px', top: -8 }}>{time.format('YYYY-MM-DD')}</span>
       </div> : <></>}
     <div style={{ display: 'flex', paddingBottom: 5, paddingLeft: 40, paddingRight: 40, boxSizing: 'border-box' }}>
-      <div style={{ flexShrink: 0, width: 120, alignSelf: "start", justifySelf: 'center', fontSize: '16px', textAlign: 'center' }}>
+      <div style={{ flexShrink: 0, minWidth: 120, alignSelf: "start", justifySelf: 'center', fontSize: '16px', textAlign: 'center' }}>
         <div style={{ fontSize: '14px', color: '#999' }}>{time.format('YYYY-MM-DD')}</div>
         <div style={{ fontWeight: 'bold' }}>{time.format('HH:mm')}</div>
       </div>
-      <div style={{ width: 4, borderRadius: '4px', background: '#67C23A' }}></div>
+      <div style={{ minWidth: 4, borderRadius: '4px', background: '#67C23A' }}></div>
       <div style={{ flex: 1 }}>
         {
           tabs.map((tab) => {

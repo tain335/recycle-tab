@@ -5,7 +5,9 @@ import { initContextMenu } from "./context_menu";
 import { initInterceptRequest } from './intercept_request';
 
 initContextMenu();
-initTabRecycle();
+if (FEATURE_RECYCLE) {
+  initTabRecycle();
+}
 initMessageHandler();
 initMessageDispatcher();
 initInterceptRequest();

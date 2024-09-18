@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Recycle Tab",
-  "description": "Recycle Tab",
+  "name": "Rabbit HTML2PDF Converter",
+  "description": "Converts HTML to high-quality PDFs, retaining fonts, allows specific area selection, and merges multiple pages into one PDF.",
   "options_page": "options.html",
   "permissions": [
     "offscreen",
@@ -10,10 +10,7 @@
     "unlimitedStorage",
     "activeTab",
     "contextMenus",
-    "history",
-    "tabGroups",
     "notifications",
-    "webRequest",
     "declarativeNetRequest",
     "scripting",
     "webNavigation"
@@ -39,8 +36,7 @@
     {
       "resources": [
         "icon-192.png",
-        "icon-32.png",
-        "PingFang-SC-Regular.ttf"
+        "icon-32.png"
       ],
       "matches": []
     }

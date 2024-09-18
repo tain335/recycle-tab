@@ -3,7 +3,7 @@ import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 
 interface SortableListProps<T, S extends keyof T> {
   style?: React.CSSProperties;
-  recordKey: T[S] extends string | number ? S : never,
+  recordKey: (T[S] extends string | number ? S : never) | ((data: T) => string | number),
   value: T[];
   onChange?: (value: T[]) => void
   render: (data: T) => React.ReactNode
@@ -36,8 +36,8 @@ export function SortableList<T, S extends keyof T>({ style, recordKey, value, on
         >
           {value.map((v, index) => <Draggable
             isDragDisabled={isDragDisabled}
-            key={v[recordKey] as string}
-            draggableId={String(v[recordKey]) as string}
+            key={typeof recordKey === 'function' ? recordKey(v) : v[recordKey] as string}
+            draggableId={String(typeof recordKey === 'function' ? recordKey(v) : v[recordKey])}
             index={index}>
             {(provided, snapshot) => <div
               ref={provided.innerRef}

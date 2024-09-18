@@ -1,13 +1,15 @@
 import React from "react";
 import { CDialog } from "./extends";
-import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle, Tooltip } from "@mui/material";
 import { isString } from "lodash";
 import { Loading } from "./Loading";
 
 export interface ConfirmDialogProps {
   title: React.ReactNode,
   content: React.ReactNode,
+  open?: boolean,
   onOpen?: () => void,
+  onClose?: () => void,
   children?: (setOpen: React.Dispatch<React.SetStateAction<boolean>>) => React.ReactNode
   onConfirm?: () => Promise<void>
   onCancel?: () => void
@@ -18,9 +20,11 @@ export interface ConfirmDialogProps {
   confirmLoading?: boolean;
   confirmDisabled?: boolean;
   cancelDisabled?: boolean;
+  confirmTips?: string;
 }
 
 export function ConfirmDialog({
+  open,
   confirmDisabled,
   cancelDisabled,
   title,
@@ -30,14 +34,18 @@ export function ConfirmDialog({
   onConfirm,
   children,
   onOpen,
+  onClose,
   confirmText,
   cancelText,
+  confirmTips,
   confirmLoading,
   cancelLoading
 }: ConfirmDialogProps) {
   return <CDialog
+    open={open}
     onOpen={onOpen}
-    maxWidth='xl'
+    onClose={onClose}
+    maxWidth={false}
     body={(setOpen) => <>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
@@ -56,14 +64,16 @@ export function ConfirmDialog({
 
           }
         }}>{cancelText ?? 'Cancel'}{cancelLoading ? <Loading></Loading> : <></>}</Button>
-        <Button disabled={confirmDisabled || confirmLoading} onClick={async () => {
-          try {
-            await onConfirm?.()
-            setOpen(false);
-          } catch (err) {
+        <Tooltip title={confirmTips} arrow placement="top">
+          <Button style={{ pointerEvents: confirmDisabled && !confirmTips ? 'none' : 'all' }} disabled={confirmDisabled || confirmLoading} onClick={async () => {
+            try {
+              await onConfirm?.()
+              setOpen(false);
+            } catch (err) {
 
-          }
-        }} autoFocus>{confirmText ?? 'Confirm'}{confirmLoading ? <Loading></Loading> : <></>}</Button>
+            }
+          }} autoFocus>{confirmText ?? 'Confirm'}{confirmLoading ? <Loading></Loading> : <></>}</Button>
+        </Tooltip>
       </DialogActions>
     </>}>
     {

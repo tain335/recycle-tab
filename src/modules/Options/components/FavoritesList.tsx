@@ -38,7 +38,6 @@ export function FavoritesList(props: FavoriteListProps) {
       props.onSelect?.([...copySelecotion]);
     }
   }
-  console.log('innerValue', innerValue);
   return <div>
     {!innerValue.length ? <div style={{ textAlign: 'center', color: '#acacac', fontSize: 18 }}>No Favorites</div> : <></>}
     <List>
@@ -111,7 +110,7 @@ export function FavoritesList(props: FavoriteListProps) {
                   </IconButton></>}
             </ListItem>
             <ListItem style={{ padding: 0, paddingLeft: 20 }}>
-              <div style={{ maxHeight: 300, overflowY: 'auto', paddingRight: 20 }}>
+              <div style={{ maxHeight: 300, overflowY: 'auto', paddingRight: 20, flex: 1 }}>
                 {
                   expandedKey === item.id ? <>
                     <SortableList

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Form, FormItem } from './Form';
-import { Autocomplete, Slider, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Autocomplete, Button, Checkbox, FormControlLabel, Radio, RadioGroup, Slider, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { LocationDisabled, LocationSearching } from '@mui/icons-material';
 import { MuiColorInput } from 'mui-color-input';
 import { useControllableValue } from 'ahooks';
@@ -15,14 +15,19 @@ type Size = {
 }
 
 export type PDFPageSettingsFormValue = {
+  title: string,
   selectAction: 'select' | 'deselect',
   window: Size;
   scale: number;
   excludeElements: Target[];
   targetElement: Target | null;
+  scrollToEnd: boolean;
+  loadEvent: 'dom_content_loaded' | 'loaded';
+  afterLoadEvent: number;
 }
 
 export type PDFPrintSettingsFormValue = {
+  margin: { top: number, left: number, right: number, bottom: number };
   background: string;
   defaultFont: string;
   page: {
@@ -44,28 +49,42 @@ interface SizeInputProps {
   style?: React.CSSProperties;
 }
 
-interface NumberInputProps {
-  style: React.CSSProperties
-}
 
 interface NumberInputProps {
+  style?: React.CSSProperties
   value?: number
   onChange?: (v: number) => void
   disabled?: boolean;
 }
 
 export function NumberInput(props: NumberInputProps) {
-  const [innerValue, setInnerValue] = useControllableValue(props, { defaultValue: 0 })
-  return <TextField disabled={props.disabled} style={props.style} size='small' value={innerValue} onChange={(e) => {
-    if (!isNaN(Number(e.target.value))) {
-      setInnerValue(Number(e.target.value))
-    }
-  }}></TextField>
+  const [input, setInput] = useState(String(props.value) ?? '');
+  const [innerValue, setInnerValue] = useControllableValue(props, { defaultValue: 0 });
+  useLayoutEffect(() => {
+    setInput(String(innerValue));
+  }, [innerValue]);
+  return <TextField disabled={props.disabled} style={props.style} size='small'
+    value={input}
+    onChange={(e) => {
+      if (!isNaN(Number(e.target.value))) {
+        setInnerValue(Number(e.target.value))
+      }
+      setInput(e.target.value)
+    }}
+    onBlur={(e) => {
+      if (!isNaN(Number(e.target.value))) {
+        setInnerValue(Number(e.target.value))
+      } else {
+        setInnerValue(0);
+        setInput('0');
+      }
+    }}
+  ></TextField>
 }
 
 export function SizeInput(props: SizeInputProps) {
   const [innerValue, setInnerValue] = useControllableValue<Size>(props, { defaultValue: { width: 0, height: 0 } });
-  return <div style={{ transformOrigin: 'left center', transform: 'scale(0.788)', whiteSpace: 'nowrap' }}>
+  return <div style={{ transformOrigin: 'left center', transform: 'scale(0.78)', whiteSpace: 'nowrap' }}>
     <NumberInput disabled={props.disabled} style={{ display: 'inline-block', width: 100, verticalAlign: 'middle' }} value={innerValue.width} onChange={(v) => {
       setInnerValue({ ...innerValue, width: Number(v) })
     }}></NumberInput><span style={{ display: 'inline-block', margin: '0 8px' }}>X</span><NumberInput disabled={props.disabled} style={{ display: 'inline-block', width: 100, verticalAlign: 'middle' }} value={innerValue.height} onChange={(v) => {
@@ -80,6 +99,7 @@ export function PDFMakerPrintSettingsForm(props: PDFMakerPrintSettingsFormProps)
       // TODO 根据平台来选择默认字体
       defaultFont: 'PingFang SC',
       background: '#ffffff',
+      margin: { top: 10, right: 10, left: 10, bottom: 10 },
       page: {
         format: 'a4',
         size: {
@@ -163,11 +183,14 @@ interface PDFMakerPageSettingsFormProps {
   onDeleteTarget?: (index: number, target: Target) => void;
   onDeleteExclude?: (index: number, target: Target) => void;
   onHighlight?: (target: Target | undefined) => void;
+  autoScroll?: boolean;
 }
 
 export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
+  const [advanceSettingsVisible, setAdvanceSettingsVisible] = useState(false)
   const [innerValue, setInnerValue] = useControllableValue<PDFPageSettingsFormValue>(props, {
     defaultValue: {
+      title: '',
       selectAction: 'select',
       window: {
         width: 0,
@@ -176,6 +199,9 @@ export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
       scale: 1,
       excludeElements: [],
       targetElement: null,
+      scrollToEnd: props.autoScroll ? true : false,
+      loadEvent: 'dom_content_loaded',
+      afterLoadEvent: 0
     }
   });
   return <Form labelWidth={140}>
@@ -229,5 +255,31 @@ export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
             }}
           ></TargetList> : <span style={{ padding: '13px 0', color: '#999' }}>{'<Empty>'}</span>}
     </FormItem>
+    {
+      props.autoScroll ?
+        <FormItem label='Auto Scroll'>
+          <div style={{ textAlign: 'left' }}>
+            <Checkbox checked={innerValue.scrollToEnd} onChange={(e) => {
+              setInnerValue({ ...innerValue, scrollToEnd: e.target.checked })
+            }}></Checkbox>
+          </div>
+        </FormItem> : <></>
+    }
+    {FEATURE_ADVANCED ? <>
+      {!advanceSettingsVisible ? <Button style={{ width: '100%' }} size='small' onClick={() => setAdvanceSettingsVisible(true)}>Advance Settings</Button> : <></>}
+      {
+        advanceSettingsVisible ? <>
+          <FormItem label='Print Start'>
+            <div style={{ transform: 'scale(0.8)', transformOrigin: 'left center' }}>
+              <RadioGroup row >
+                <FormControlLabel value="dom_content_loaded" control={<Radio size='small' />} label="DOM Content Loaded" />
+                <FormControlLabel value="loaded" control={<Radio size='small' />} label="Loaded" />
+              </RadioGroup>
+            </div>
+          </FormItem>
+          <FormItem label='Print Wait'>
+            <NumberInput style={{ transform: 'scale(0.78)', transformOrigin: 'left center', width: 225 }}></NumberInput>
+          </FormItem>
+        </> : <></>} </> : <></>}
   </Form>
 }

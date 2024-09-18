@@ -29,7 +29,7 @@ export function TargetList({ targets, onHover, onDelete }: TargetListProps) {
             <Delete style={{ fontSize: 18 }}></Delete>
           </IconButton>
         }>
-        <Tooltip title={t.selector}>
+        <Tooltip title={t.selector} arrow>
           <div style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: 120 }}>{t.selector}</div>
         </Tooltip>
       </ListItem>)
