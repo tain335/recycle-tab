@@ -75,6 +75,7 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           waiting={converting}
           waitingText="converting..."
           src={tab.url}
+          title={tab.title}
           width={1100}
           onUpdate={(state) => {
             setConvertState(state);
@@ -87,7 +88,6 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           }}>Convert</Button>
         }
       </ConfirmDialog>
-
       <ConfirmDialog title='Tips' content='Are you sure to remove this tab?'
         onConfirm={async () => {
           onRemove(tab)
@@ -96,8 +96,6 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           setOpen(true)
         }}>Remove</Button>}
       </ConfirmDialog>
-
-
       <Checkbox checked={selected} onChange={(e) => {
         onSelectedChange(tab, e.target.checked);
       }}></Checkbox>

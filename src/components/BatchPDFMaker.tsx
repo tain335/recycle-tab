@@ -30,7 +30,7 @@ export enum ConvertState {
 }
 
 interface BatchPDFMakerProps {
-  title: string;
+  title?: string;
   tabs: RecycleTab[]
   onStateChange: (state: BatchConvertState) => void;
 }
@@ -114,7 +114,7 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
             emitPageNums: true,
             pageNumsColor: '#000000',
           });
-          downloadBlob(data, `${title ?? 'pdf_maker'}.pdf`, 'application/octet-stream');
+          downloadBlob(data, `${title ?? 'rabbit_html2pdf_converter_' + Math.floor(Date.now() / 1000)}.pdf`, 'application/octet-stream');
         } catch (e) {
           console.error(e);
           setCurrentState(BatchConvertState.Interrupt);

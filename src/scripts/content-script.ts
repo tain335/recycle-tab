@@ -98,6 +98,7 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
           margin: [20, 10],
           background: params.background ?? '#ffffff',
           format: params.format as PageFomat,
+          fileName: params.filename,
           ignoreElements: excludeElements,
         });
       } else {

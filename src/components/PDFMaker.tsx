@@ -30,6 +30,7 @@ interface PDFMakerProps {
   waitingText?: string;
   width: number;
   height?: number;
+  title?: string;
   src: string;
   settings?: PDFMakersSettings,
   onUpdate: (state: ConvertUpdateState) => void
@@ -90,6 +91,7 @@ export interface PDFMakerRef {
 // 页码
 // 标题
 export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PDFMaker({
+  title,
   src,
   width,
   height = document.body.clientHeight * 0.66,
@@ -279,7 +281,7 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
           format: convertSettings.page.format,
           target: pageSettings.targetElement as Target,
           excludes: pageSettings.excludeElements,
-          filename: opts?.filename,
+          filename: opts?.filename ?? title ?? `rabbit_html2pdf_converter_${Math.floor(Date.now() / 1000)}`,
           autoSave: opts?.autoSave,
         });
       }
