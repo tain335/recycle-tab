@@ -6,11 +6,11 @@ import { RecycleTab } from '@src/model/recycle_tab';
 
 interface FavoritesDialogProps extends Omit<ConfirmDialogProps, 'content' | 'title'> {
   favoriteTabs?: RecycleTab[]
-  printable?: boolean;
-  onPrint?: (favorite: FavoriteListValue) => void
+  convertable?: boolean;
+  onConvert?: (favorite: FavoriteListValue) => void
 }
 
-export function FavoritesDialog({ children, favoriteTabs, printable, ...props }: FavoritesDialogProps) {
+export function FavoritesDialog({ children, favoriteTabs, convertable, ...props }: FavoritesDialogProps) {
   const [selection, setSelection] = useState<string[]>([])
   const [favorites, setFavorites] = useState<FavoriteListValue[]>([])
   const openRef = useRef<React.Dispatch<React.SetStateAction<boolean>> | null>(null);
@@ -36,14 +36,14 @@ export function FavoritesDialog({ children, favoriteTabs, printable, ...props }:
       })()
     }}
     content={<FavoritesList
-      printable={printable}
+      convertable={convertable}
       selectable={!!favoriteTabs}
       value={favorites}
       onChange={(value) => {
         setFavorites(value)
       }}
-      onPrint={(f) => {
-        props.onPrint?.(f);
+      onConvert={(f) => {
+        props.onConvert?.(f);
         openRef.current?.(false);
       }}
       selection={selection}

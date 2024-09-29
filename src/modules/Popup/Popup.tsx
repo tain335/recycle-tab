@@ -7,7 +7,7 @@ import { FormItem, Form } from '@src/components/Form';
 import { SettingsControl, SettingsSubForm, validateSubSettings } from '../Options/components/SettingsForm';
 import { MessageType, PrimarySettingsValue } from '@src/constants/constants';
 import { ListItemIcon, ListItemText, MenuItem, MenuList } from '@mui/material';
-import PrintIcon from '@mui/icons-material/Print';
+import ChangeCircle from '@mui/icons-material/ChangeCircle';
 import StorageIcon from '@mui/icons-material/Storage';
 
 function Popup() {
@@ -70,15 +70,15 @@ function Popup() {
         <MenuItem onClick={async () => {
           var tabs = await chrome.tabs.query({ highlighted: true, active: true, currentWindow: true });
           if (tabs.length) {
-            chrome.storage.local.set({ ['$' + MessageType.ShowPrinter]: tabs[0].url }, () => {
+            chrome.storage.local.set({ ['$' + MessageType.ShowConverter]: tabs[0].url }, () => {
               chrome.runtime.openOptionsPage();
             });
           }
         }}>
           <ListItemIcon>
-            <PrintIcon fontSize='small' style={{ color: 'rgb(103, 194, 58)' }}></PrintIcon>
+            <ChangeCircle fontSize='small' style={{ color: 'rgb(103, 194, 58)' }}></ChangeCircle>
           </ListItemIcon>
-          <ListItemText style={{ color: '#333' }}>Print Current Page</ListItemText>
+          <ListItemText style={{ color: '#333' }}>Convert Current Page To PDF</ListItemText>
         </MenuItem>
       </MenuList>
     </div>

@@ -8,7 +8,7 @@ import { RecycleTab } from "@src/model/recycle_tab";
 import { Checkbox } from "@mui/material";
 import { useControllableValue } from "ahooks";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
-import { PDFMaker, PDFMakerRef, PrintUpdateState, loadFonts } from "@src/components/PDFMaker";
+import { PDFMaker, PDFMakerRef, ConvertUpdateState, loadFonts } from "@src/components/PDFMaker";
 import { FavoritesDialog } from "./FavoritesDialog";
 
 interface TabItemProps {
@@ -19,9 +19,9 @@ interface TabItemProps {
 }
 
 function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
-  const [printState, setPrintState] = useState<PrintUpdateState>();
+  const [convertState, setConvertState] = useState<ConvertUpdateState>();
   const pdfMakerRef = useRef<PDFMakerRef>(null);
-  const [printing, setPrinting] = useState(false);
+  const [converting, setConverting] = useState(false);
   return <div style={{ display: "flex", marginBottom: 10, background: selected ? '#e6f4ff' : '' }}>
     <div style={{ lineHeight: '32px', fontSize: '16px', cursor: 'pointer', flex: 1 }} onClick={(e) => {
       if (e.currentTarget === e.target) {
@@ -43,7 +43,7 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
           }} href={tab.url}>{tab.title}</Link>
       </div>
     </div>
-    <div style={{ width: 300, textAlign: 'right', cursor: 'pointer' }} onClick={(e) => {
+    <div style={{ width: 320, textAlign: 'right', cursor: 'pointer' }} onClick={(e) => {
       if (e.currentTarget === e.target) {
         onSelectedChange(tab, !selected);
       }
@@ -53,38 +53,38 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
       </FavoritesDialog>
       <ConfirmDialog
         width='100%'
-        title={"PDF Maker"}
-        confirmText="Print"
-        confirmLoading={printing}
-        confirmDisabled={!printState?.settings.pageSettings.targetElement || printing}
+        title={"PDF Converter"}
+        confirmText="Covert"
+        confirmLoading={converting}
+        confirmDisabled={!convertState?.settings.pageSettings.targetElement || converting}
         onConfirm={async () => {
           try {
-            if (!printState?.settings.pageSettings.targetElement) {
+            if (!convertState?.settings.pageSettings.targetElement) {
               return;
             }
-            setPrinting(true);
-            await pdfMakerRef.current?.print();
+            setConverting(true);
+            await pdfMakerRef.current?.convert();
           } catch (err) {
             throw err
           } finally {
-            setPrinting(false)
+            setConverting(false)
           }
         }}
         content={<PDFMaker
           ref={pdfMakerRef}
-          waiting={printing}
-          waitingText="Printing..."
+          waiting={converting}
+          waitingText="converting..."
           src={tab.url}
           width={1100}
           onUpdate={(state) => {
-            setPrintState(state);
+            setConvertState(state);
           }}></PDFMaker>}>
         {
           (setVisible) => <Button variant="outlined" size="small" style={{ marginRight: 10 }} onClick={async () => {
             await loadFonts();
             setVisible(true)
-            setPrinting(false)
-          }}>Print</Button>
+            setConverting(false)
+          }}>Convert</Button>
         }
       </ConfirmDialog>
 
@@ -236,7 +236,9 @@ export function DayTimeline({ onScrollItem, tabs, selectTime, onRemove, ...props
     return previousOffset.current;
   }, [selectTime, dayTimeItems])
   previousOffset.current = offset;
-
+  if (dayTimeItems.length === 0) {
+    return <div style={{ display: "flex", justifyContent: 'center', alignItems: 'center', color: '#acacac', fontSize: 36, minHeight: '100%' }}><div style={{ marginBottom: 120 }}>No Data</div></div>
+  }
   return <AutoSizer disableWidth>{
     ({ height }: { height: number }) => {
       return <VirtualList

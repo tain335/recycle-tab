@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, IconButton, Input, Link, List, ListItem, Checkbox } from '@mui/material';
 import { useControllableValue } from 'ahooks';
-import { Add, DragIndicator, Close, Done, Edit, KeyboardArrowDown, KeyboardArrowRight, Print } from '@mui/icons-material';
+import { Add, DragIndicator, Close, Done, Edit, KeyboardArrowDown, KeyboardArrowRight, ChangeCircle } from '@mui/icons-material';
 import { FormControl } from '@src/components/Form';
 import { nanoid } from 'nanoid';
 import { uniq } from 'lodash';
@@ -15,12 +15,12 @@ export type FavoriteListValue = FavoriteItem & {
 
 interface FavoriteListProps {
   selectable?: boolean
-  printable?: boolean
+  convertable?: boolean
   value?: FavoriteListValue[],
   onChange?: (value: FavoriteListValue[]) => void
   selection?: string[],
   onSelect?: (selection: string[]) => void;
-  onPrint?: (favorite: FavoriteListValue) => void;
+  onConvert?: (favorite: FavoriteListValue) => void;
 }
 
 export function FavoritesList(props: FavoriteListProps) {
@@ -47,7 +47,7 @@ export function FavoritesList(props: FavoriteListProps) {
             <ListItem key={item.id} style={{ width: '100%', padding: 0 }}>
               {item.done ? <>
                 {
-                  props.printable ? <IconButton disabled={!item.tabs.length} size="small" onClick={() => {
+                  props.convertable ? <IconButton disabled={!item.tabs.length} size="small" onClick={() => {
                     setExpandedKey(item.id === expandedKey ? '' : item.id);
                   }}>
                     {expandedKey === item.id ? <KeyboardArrowDown fontSize="small"></KeyboardArrowDown> : <KeyboardArrowRight fontSize="small"></KeyboardArrowRight>}
@@ -68,12 +68,12 @@ export function FavoritesList(props: FavoriteListProps) {
                     }
                   }}></Checkbox> : <></>}
                   {
-                    props.printable ?
+                    props.convertable ?
                       <IconButton disabled={!item.tabs.length} size="small"
                         onClick={() => {
-                          props.onPrint?.(item);
+                          props.onConvert?.(item);
                         }}>
-                        <Print fontSize="small"></Print>
+                        <ChangeCircle fontSize="small"></ChangeCircle>
                       </IconButton>
                       : <></>
                   }

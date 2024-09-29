@@ -18,16 +18,22 @@ export function initContextMenu() {
     }
     chrome.contextMenus.create({
       documentUrlPatterns: ['https://*/*', 'http://*/*'],
-      id: Action.TriggerPrintTab,
-      title: "Print Current Page",
+      id: Action.TriggerViewStashTab,
+      title: "View Stash",
       contexts: ["all"]
     })
     chrome.contextMenus.create({
       documentUrlPatterns: ['https://*/*', 'http://*/*'],
-      id: Action.TriggerStatshTab,
+      id: Action.TriggerConvertTab,
+      title: "Convert Current Page To PDF",
+      contexts: ["all"]
+    });
+    chrome.contextMenus.create({
+      documentUrlPatterns: ['https://*/*', 'http://*/*'],
+      id: Action.TriggerStashTab,
       title: "Stash Current Page",
       contexts: ["all"]
-    })
+    });
   });
 
   chrome.contextMenus.onClicked.addListener(async (details) => {
@@ -38,19 +44,22 @@ export function initContextMenu() {
         dispatchUpdateList();
         emitRecycleNotification(`Recycle ${len} tab(s)`)
         break;
-      case Action.TriggerStatshTab:
+      case Action.TriggerStashTab:
         var tabs = await chrome.tabs.query({ highlighted: true, active: true, currentWindow: true });
         var len = await recycleTabs(tabs, true, false);
         dispatchUpdateList();
         emitRecycleNotification(`Stash ${len} page(s) susccess`)
         break;
-      case Action.TriggerPrintTab:
+      case Action.TriggerConvertTab:
         var tabs = await chrome.tabs.query({ highlighted: true, active: true, currentWindow: true });
         if (tabs.length) {
-          chrome.storage.local.set({ ['$' + MessageType.ShowPrinter]: tabs[0].url }, () => {
+          chrome.storage.local.set({ ['$' + MessageType.ShowConverter]: tabs[0].url }, () => {
             chrome.runtime.openOptionsPage();
           });
         }
+        break;
+      case Action.TriggerViewStashTab:
+        chrome.runtime.openOptionsPage();
         break;
       default:
         throw new Error('no match action')

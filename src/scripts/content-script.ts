@@ -19,7 +19,7 @@ var observer: MutationObserver;
 
 // TODO html2canvas 解释样式错误，错误提示，printing动画
 export interface FrameMessages {
-  print: (params: {
+  convert: (params: {
     defaultFonts: Uint8Array[],
     format?: string,
     target: Target,
@@ -83,7 +83,7 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
     return Array.from(fontFamilies.keys());
   }
   messager.registerReceiveActions({
-    async print(params) {
+    async convert(params) {
       const el = document.querySelector(params.target.selector);
       if (el) {
         await waitForScroll();

@@ -3,16 +3,16 @@ import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from
 import { SortableList } from './SortableList';
 import { IconButton, Tooltip } from '@mui/material';
 import { Delete, Done, DragIndicator, Refresh, WarningOutlined } from '@mui/icons-material';
-import { PDFMaker, PDFMakerRef, PrintUpdateState } from './PDFMaker';
+import { PDFMaker, PDFMakerRef, ConvertUpdateState } from './PDFMaker';
 import { Loading } from './Loading';
 import { similarityURL } from '@src/utils/similarityUrl';
 import { cloneDeep } from 'lodash';
-import { BatchPrintTaskQueue } from './BatchPrintTaskQueue';
+import { BatchConvertTaskQueue } from './BatchConvertTaskQueue';
 
 import mitt from 'mitt';
 import { downloadBlob, merge } from 'web2pdf';
 
-export enum BatchPrintState {
+export enum BatchConvertState {
   Pending = 'pending',
   Ready = 'ready',
   Working = 'working',
@@ -20,10 +20,10 @@ export enum BatchPrintState {
   Done = 'done',
 }
 
-export enum PrintState {
+export enum ConvertState {
   Pending = 'pending',
   Ready = 'ready',
-  Printable = 'Printable',
+  Convertable = 'Convertable',
   Working = 'working',
   Done = 'done',
   Error = 'error'
@@ -32,72 +32,72 @@ export enum PrintState {
 interface BatchPDFMakerProps {
   title: string;
   tabs: RecycleTab[]
-  onStateChange: (state: BatchPrintState) => void;
+  onStateChange: (state: BatchConvertState) => void;
 }
 
-type PrintTask = {
-  status: PrintState,
+type ConvertTask = {
+  status: ConvertState,
   tab: RecycleTab
-  settings?: PrintUpdateState['settings'];
+  settings?: ConvertUpdateState['settings'];
   inherit: boolean
 }
 
 export type BatchPDFMakerRef = {
-  printAll: () => void
+  convertAll: () => void
 }
 
-type BatchPrintEvents = {
+type BatchConvertEvents = {
   "stateUpdate": void
 }
 
 export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerProps>(function BatchPDFMaker({ title, tabs, onStateChange }: BatchPDFMakerProps, ref) {
-  const [sourceList, setSourceList] = useState<PrintTask[]>(() => tabs.map((t) => ({ status: PrintState.Pending, tab: t, inherit: false })));
+  const [sourceList, setSourceList] = useState<ConvertTask[]>(() => tabs.map((t) => ({ status: ConvertState.Pending, tab: t, inherit: false })));
   const [selected, setSelected] = useState(sourceList[0]);
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
   const [dragDisabled, setDragDisabled] = useState(true);
   const pdfMakerRef = useRef<PDFMakerRef>(null);
-  const emitter = useMemo(() => mitt<BatchPrintEvents>(), []);
+  const emitter = useMemo(() => mitt<BatchConvertEvents>(), []);
   const [refreshFlag, setRefreshFlag] = useState(0);
-  const [currentState, setCurrentState] = useState<BatchPrintState>(BatchPrintState.Pending);
+  const [currentState, setCurrentState] = useState<BatchConvertState>(BatchConvertState.Pending);
   useImperativeHandle(ref, () => {
     return {
-      async printAll() {
-        const queue = new BatchPrintTaskQueue<Uint8Array | undefined>();
+      async convertAll() {
+        const queue = new BatchConvertTaskQueue<Uint8Array | undefined>();
         sourceList.forEach((task) => {
           queue.add({
             taskId: task.tab.tabId,
             async exec() {
-              // 因为当配置完其他tab的时候，他们的状态都是Printable的，所以真正执行的时候，需要等iframe 加载成功
-              if (selectedRef.current !== task && task.status === PrintState.Printable) {
+              // 因为当配置完其他tab的时候，他们的状态都是Convertable的，所以真正执行的时候，需要等iframe 加载成功
+              if (selectedRef.current !== task && task.status === ConvertState.Convertable) {
                 // reset task status
-                task.status = PrintState.Ready;
+                task.status = ConvertState.Ready;
               }
               setSelected(task);
-              const doPrint = async () => {
-                task.status = PrintState.Working;
+              const doConvert = async () => {
+                task.status = ConvertState.Working;
                 setSourceList([...sourceList]);
                 try {
-                  const result = await pdfMakerRef.current?.print({
+                  const result = await pdfMakerRef.current?.convert({
                     autoSave: false
                   });
-                  task.status = PrintState.Done;
+                  task.status = ConvertState.Done;
                   return result;
                 } catch (e) {
-                  task.status = PrintState.Error;
+                  task.status = ConvertState.Error;
                   throw e;
                 } finally {
                   setSourceList([...sourceList])
                 }
               }
-              if (task.status === PrintState.Printable) {
-                await doPrint();
+              if (task.status === ConvertState.Convertable) {
+                await doConvert();
               } else {
                 return new Promise<Uint8Array | undefined>((resolve) => {
                   const onStateUpdate = () => {
-                    if (task.status === PrintState.Printable) {
+                    if (task.status === ConvertState.Convertable) {
                       emitter.off('stateUpdate', onStateUpdate);
-                      resolve(doPrint());
+                      resolve(doConvert());
                     }
                   }
                   emitter.on('stateUpdate', onStateUpdate);
@@ -106,7 +106,7 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
             },
           });
         });
-        setCurrentState(BatchPrintState.Working);
+        setCurrentState(BatchConvertState.Working);
         try {
           const result = await queue.execAll();
           const data = await merge((result.filter(Boolean) as unknown as Uint8Array[]).map((r, i) => ({ pages: [r], title: sourceList[i].tab.title })), {
@@ -117,28 +117,28 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
           downloadBlob(data, `${title ?? 'pdf_maker'}.pdf`, 'application/octet-stream');
         } catch (e) {
           console.error(e);
-          setCurrentState(BatchPrintState.Interrupt);
+          setCurrentState(BatchConvertState.Interrupt);
           throw e;
         }
       },
     }
   }, [sourceList]);
   useEffect(() => {
-    const ready = sourceList.every((item) => item.status === PrintState.Ready || item.status === PrintState.Printable);
-    const working = sourceList.some((item) => item.status === PrintState.Working);
-    const done = sourceList.every((item) => item.status === PrintState.Done);
+    const ready = sourceList.every((item) => item.status === ConvertState.Ready || item.status === ConvertState.Convertable);
+    const working = sourceList.some((item) => item.status === ConvertState.Working);
+    const done = sourceList.every((item) => item.status === ConvertState.Done);
     if (done) {
-      onStateChange(BatchPrintState.Done);
+      onStateChange(BatchConvertState.Done);
       return;
     }
     if (working) {
-      onStateChange(BatchPrintState.Working);
+      onStateChange(BatchConvertState.Working);
       return
     }
     if (ready) {
-      onStateChange(BatchPrintState.Ready);
+      onStateChange(BatchConvertState.Ready);
     } else {
-      onStateChange(BatchPrintState.Pending);
+      onStateChange(BatchConvertState.Pending);
     }
   }, [sourceList]);
   useEffect(() => {
@@ -191,12 +191,12 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
                 : <></>
             }
             {
-              task.status === PrintState.Working ? <Loading fontSize='small' style={{ marginTop: 4 }}></Loading> : <></>
+              task.status === ConvertState.Working ? <Loading fontSize='small' style={{ marginTop: 4 }}></Loading> : <></>
             }
             {
-              task.status === PrintState.Done ? <Done fontSize="small" style={{ marginTop: 4 }} color='success'></Done> : <></>
+              task.status === ConvertState.Done ? <Done fontSize="small" style={{ marginTop: 4 }} color='success'></Done> : <></>
             }
-            {task.status === PrintState.Error ? <IconButton size='small' onClick={() => {
+            {task.status === ConvertState.Error ? <IconButton size='small' onClick={() => {
               setRefreshFlag(((flag) => flag + 1))
             }}><Refresh fontSize="small" color='error'></Refresh></IconButton> : <></>}
             {sourceList.length > 1 ? <IconButton
@@ -222,7 +222,7 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
     <PDFMaker
       ref={pdfMakerRef}
       autoScroll
-      waiting={currentState === BatchPrintState.Working}
+      waiting={currentState === BatchConvertState.Working}
       applySameSettings
       key={`PDFMakert_${refreshFlag}_${selected.tab.url}`}
       src={selected.tab.url}
@@ -231,14 +231,14 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
       onUpdate={(state) => {
         selected.settings = state.settings;
         if (state.error) {
-          selected.status = PrintState.Error;
+          selected.status = ConvertState.Error;
         } else if (selected.settings?.pageSettings?.targetElement) {
-          selected.status = PrintState.Ready;
+          selected.status = ConvertState.Ready;
         } else {
-          selected.status = PrintState.Pending;
+          selected.status = ConvertState.Pending;
         }
-        if (selected.status === PrintState.Ready && state.ready) {
-          selected.status = PrintState.Printable;
+        if (selected.status === ConvertState.Ready && state.ready) {
+          selected.status = ConvertState.Convertable;
         }
         setSourceList([...sourceList]);
         setTimeout(() => {
@@ -251,7 +251,7 @@ export const BatchPDFMaker = React.forwardRef<BatchPDFMakerRef, BatchPDFMakerPro
             if ((s.settings && s.inherit) || !s.settings) {
               s.settings = cloneDeep(v);
               s.inherit = true;
-              s.status = PrintState.Ready
+              s.status = ConvertState.Ready
             }
           }
         })

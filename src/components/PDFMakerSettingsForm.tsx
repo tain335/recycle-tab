@@ -26,7 +26,7 @@ export type PDFPageSettingsFormValue = {
   afterLoadEvent: number;
 }
 
-export type PDFPrintSettingsFormValue = {
+export type PDFConvertSettingsFormValue = {
   margin: { top: number, left: number, right: number, bottom: number };
   background: string;
   defaultFont: string;
@@ -36,10 +36,10 @@ export type PDFPrintSettingsFormValue = {
   }
 }
 
-interface PDFMakerPrintSettingsFormProps {
+interface PDFMakerConvertSettingsFormProps {
   localFonts?: Record<string, LocalFont[]>
-  value?: PDFPrintSettingsFormValue
-  onChange?: (value: PDFPrintSettingsFormValue) => void;
+  value?: PDFConvertSettingsFormValue
+  onChange?: (value: PDFConvertSettingsFormValue) => void;
 }
 
 interface SizeInputProps {
@@ -93,8 +93,8 @@ export function SizeInput(props: SizeInputProps) {
   </div>
 }
 
-export function PDFMakerPrintSettingsForm(props: PDFMakerPrintSettingsFormProps) {
-  const [innerValue, setInnerValue] = useControllableValue<PDFPrintSettingsFormValue>(props, {
+export function PDFMakerConvertSettingsForm(props: PDFMakerConvertSettingsFormProps) {
+  const [innerValue, setInnerValue] = useControllableValue<PDFConvertSettingsFormValue>(props, {
     defaultValue: {
       // TODO 根据平台来选择默认字体
       defaultFont: 'PingFang SC',
@@ -269,7 +269,7 @@ export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
       {!advanceSettingsVisible ? <Button style={{ width: '100%' }} size='small' onClick={() => setAdvanceSettingsVisible(true)}>Advance Settings</Button> : <></>}
       {
         advanceSettingsVisible ? <>
-          <FormItem label='Print Start'>
+          <FormItem label='Convert Start'>
             <div style={{ transform: 'scale(0.8)', transformOrigin: 'left center' }}>
               <RadioGroup row >
                 <FormControlLabel value="dom_content_loaded" control={<Radio size='small' />} label="DOM Content Loaded" />
@@ -277,7 +277,7 @@ export function PDFMakerPageSettingsForm(props: PDFMakerPageSettingsFormProps) {
               </RadioGroup>
             </div>
           </FormItem>
-          <FormItem label='Print Wait'>
+          <FormItem label='Convert Wait'>
             <NumberInput style={{ transform: 'scale(0.78)', transformOrigin: 'left center', width: 225 }}></NumberInput>
           </FormItem>
         </> : <></>} </> : <></>}

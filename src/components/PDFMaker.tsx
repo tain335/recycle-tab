@@ -1,7 +1,7 @@
 import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { FrameMessages } from '@src/scripts/content-script';
 import { CrossMessager } from '@src/messager/messager';
-import { PDFMakerPageSettingsForm, PDFMakerPrintSettingsForm, PDFPageSettingsFormValue, PDFPrintSettingsFormValue } from './PDFMakerSettingsForm';
+import { PDFMakerPageSettingsForm, PDFMakerConvertSettingsForm, PDFPageSettingsFormValue, PDFConvertSettingsFormValue } from './PDFMakerSettingsForm';
 import { readBlobAsUint8Array } from '@src/utils/readBlobAsUint8Array';
 import { useMemoRef } from '@src/hooks/useMemoRef';
 import { Loading } from './Loading';
@@ -13,10 +13,10 @@ import { isFunction } from 'lodash';
 
 interface PDFMakersSettings {
   pageSettings: PDFPageSettingsFormValue,
-  printSettings: PDFPrintSettingsFormValue,
+  convertSettings: PDFConvertSettingsFormValue,
 }
 
-export interface PrintUpdateState {
+export interface ConvertUpdateState {
   ready: boolean,
   error?: Error,
   settings: PDFMakersSettings,
@@ -32,7 +32,7 @@ interface PDFMakerProps {
   height?: number;
   src: string;
   settings?: PDFMakersSettings,
-  onUpdate: (state: PrintUpdateState) => void
+  onUpdate: (state: ConvertUpdateState) => void
   onApplySameSetings?: (settings: PDFMakersSettings) => void;
 }
 
@@ -78,12 +78,12 @@ function useControllableValue<T>(props: { value?: T, onChange?: (v: T) => void }
   }
 }
 
-interface PrintOpts {
+interface ConvertOpts {
   filename?: string, autoSave?: boolean
 }
 
 export interface PDFMakerRef {
-  print: (opts?: PrintOpts) => Promise<Uint8Array>
+  convert: (opts?: ConvertOpts) => Promise<Uint8Array>
 }
 
 
@@ -112,7 +112,7 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
   const [pageSettings, setPageSettings, pageSettingsControlled] = useControllableValue<PDFPageSettingsFormValue>({
     value: settings?.pageSettings,
     onChange: (v) => {
-      onUpdate({ ready, settings: { pageSettings: v, printSettings }, messager });
+      onUpdate({ ready, settings: { pageSettings: v, convertSettings }, messager });
     }
   },
     {
@@ -129,10 +129,10 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
       loadEvent: 'dom_content_loaded',
       afterLoadEvent: 0,
     });
-  const [printSettings, setPrintSettings, printSettingsControlled] = useControllableValue<PDFPrintSettingsFormValue>({
-    value: settings?.printSettings,
+  const [convertSettings, setConvertSettings, convertSettingsControlled] = useControllableValue<PDFConvertSettingsFormValue>({
+    value: settings?.convertSettings,
     onChange: (v) => {
-      onUpdate({ ready, settings: { pageSettings, printSettings: v }, messager });
+      onUpdate({ ready, settings: { pageSettings, convertSettings: v }, messager });
     }
   },
     {
@@ -216,12 +216,12 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
   }, []);
 
   useEffect(() => {
-    onUpdate({ ready, settings: { pageSettings, printSettings }, messager, error });
+    onUpdate({ ready, settings: { pageSettings, convertSettings }, messager, error });
   }, [
     ready,
     error,
     !pageSettingsControlled ? pageSettings : undefined,
-    !printSettingsControlled ? printSettings : undefined,
+    !convertSettingsControlled ? convertSettings : undefined,
     messager
   ]);
 
@@ -267,16 +267,16 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
 
   useImperativeHandle(ref, () => {
     return {
-      print: async (opts?: PrintOpts) => {
+      convert: async (opts?: ConvertOpts) => {
         await loadFonts();
-        const fonts = getFonts()[printSettings.defaultFont] ?? [];
+        const fonts = getFonts()[convertSettings.defaultFont] ?? [];
         const loadedFontsData = await Promise.all(fonts.map(async (f) => {
           return await readBlobAsUint8Array(await f.blob())
         }));
-        return await messager.send('print', {
+        return await messager.send('convert', {
           defaultFonts: loadedFontsData,
-          background: printSettings.background,
-          format: printSettings.page.format,
+          background: convertSettings.background,
+          format: convertSettings.page.format,
           target: pageSettings.targetElement as Target,
           excludes: pageSettings.excludeElements,
           filename: opts?.filename,
@@ -284,7 +284,7 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
         });
       }
     }
-  }, [printSettings, pageSettings, messager]);
+  }, [convertSettings, pageSettings, messager]);
 
   const buildOverlay = () => {
     if (error) {
@@ -359,12 +359,12 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
           }}
         ></PDFMakerPageSettingsForm>
         <h3>PDF Settings</h3>
-        <PDFMakerPrintSettingsForm
+        <PDFMakerConvertSettingsForm
           localFonts={localFonts}
-          value={printSettings}
+          value={convertSettings}
           onChange={(settings) => {
-            setPrintSettings(settings);
-          }}></PDFMakerPrintSettingsForm>
+            setConvertSettings(settings);
+          }}></PDFMakerConvertSettingsForm>
         {applySameSettings ? <Form labelWidth={140}>
           <FormItem label='Similarity Pages' style={{ marginTop: 4 }}>
             <Button
@@ -373,7 +373,7 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
               style={{ marginRight: 30 }}
               disabled={!pageSettings.targetElement}
               onClick={() => {
-                onApplySameSetings?.({ pageSettings, printSettings });
+                onApplySameSetings?.({ pageSettings, convertSettings });
                 setMessageOpen(true);
               }}
             >Apply Same Settings</Button>

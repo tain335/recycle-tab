@@ -10,7 +10,7 @@ import { DefaultSettings } from '@src/constants/constants'
 import { getObjectKey } from "@src/utils/getObjectKey";
 import { FavoritesDialog } from "./FavoritesDialog";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
-import { BatchPDFMaker, BatchPDFMakerRef, BatchPrintState } from "@src/components/BatchPDFMaker";
+import { BatchPDFMaker, BatchPDFMakerRef, BatchConvertState } from "@src/components/BatchPDFMaker";
 import { FavoriteListValue } from "./FavoritesList";
 import { useCrossMessage } from "@src/hooks/useCrossMessage";
 
@@ -20,7 +20,7 @@ export function SettingsButton() {
   const [settingsOpen, setSettingsOpen] = useState(!!config);
   const batchPDFMakerRef = useRef<BatchPDFMakerRef>(null);
   const anchorEl = useRef<HTMLButtonElement | null>(null);
-  const [batchPrintState, setBatchPrintState] = useState(BatchPrintState.Pending);
+  const [batchConvertState, setBatchConvertState] = useState(BatchConvertState.Pending);
   const [settings, setSettings] = useState<SettingsValue>({
     ...DefaultSettings
   });
@@ -70,27 +70,27 @@ export function SettingsButton() {
       }}
     >
       <List style={{ width: 240 }}>
-        <ConfirmDialog title="PDF Maker"
-          confirmText="Print All"
-          confirmTips={batchPrintState === BatchPrintState.Pending ? 'Please set all page settings' : ''}
-          confirmDisabled={batchPrintState !== BatchPrintState.Ready}
-          confirmLoading={batchPrintState === BatchPrintState.Working}
+        <ConfirmDialog title="PDF Converter"
+          confirmText="Convert All"
+          confirmTips={batchConvertState === BatchConvertState.Pending ? 'Please set all page settings' : ''}
+          confirmDisabled={batchConvertState !== BatchConvertState.Ready}
+          confirmLoading={batchConvertState === BatchConvertState.Working}
           width={1100}
           content={<BatchPDFMaker
             onStateChange={(state) => {
-              setBatchPrintState(state);
+              setBatchConvertState(state);
             }}
             ref={batchPDFMakerRef}
             title={favorite?.name ?? ''}
             tabs={favorite?.tabs ?? []}
           ></BatchPDFMaker>}
           onConfirm={async () => {
-            await batchPDFMakerRef.current?.printAll();
+            await batchPDFMakerRef.current?.convertAll();
           }}>
           {
             (setPDFMakerOpen) => <FavoritesDialog
-              printable
-              onPrint={(favorite) => {
+              convertable
+              onConvert={(favorite) => {
                 setFavorite(favorite)
                 setPDFMakerOpen(true)
               }}>
