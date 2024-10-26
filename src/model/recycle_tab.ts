@@ -1,5 +1,8 @@
+import { nanoid } from "nanoid";
+
 export class RecycleTab {
   public manualDelete = false;
+  public id = nanoid();
   constructor(
     public tabId: number,
     public url: string,

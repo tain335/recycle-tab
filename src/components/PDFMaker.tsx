@@ -6,10 +6,12 @@ import { readBlobAsUint8Array } from '@src/utils/readBlobAsUint8Array';
 import { useMemoRef } from '@src/hooks/useMemoRef';
 import { Loading } from './Loading';
 import { Error as ErrorIcon, KeyboardDoubleArrowLeft, KeyboardDoubleArrowRight } from '@mui/icons-material';
-import { Alert, Button, IconButton, Snackbar } from '@mui/material';
+import { Button, IconButton } from '@mui/material';
 import { PageFormats } from 'web2pdf';
 import { Form, FormItem } from './Form';
 import { isFunction } from 'lodash';
+import { initResolveCORSRules } from '@src/modules/Background/intercept_request';
+import { useNotifications } from '@toolpad/core';
 
 interface PDFMakersSettings {
   pageSettings: PDFPageSettingsFormValue,
@@ -107,7 +109,7 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
   const pannelCollapseWidth = 36;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [messageOpen, setMessageOpen] = useState(false);
+  const notifications = useNotifications();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<Error>();
   const [collapse, setCollapse] = useState(false);
@@ -193,6 +195,7 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
           for (let i = 0; i < fontNames.length; i++) {
             resolvedFonts[fontNames[i]] = await Promise.all(resolvedFontsPromises[fontNames[i]])
           }
+          console.info("resolvedFonts", Object.keys(resolvedFonts), 'unkownFontFamiles', Array.from(unkownFontFamiles.values()))
           return { resolvedFonts, unkownFontFamiles: Array.from(unkownFontFamiles.values()) }
         },
         async getAction() {
@@ -271,11 +274,12 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
     return {
       convert: async (opts?: ConvertOpts) => {
         await loadFonts();
+        const dropRules = await initResolveCORSRules(20001, new URL(iframeRef.current?.src ?? '').host);
         const fonts = getFonts()[convertSettings.defaultFont] ?? [];
         const loadedFontsData = await Promise.all(fonts.map(async (f) => {
           return await readBlobAsUint8Array(await f.blob())
         }));
-        return await messager.send('convert', {
+        const data = await messager.send('convert', {
           defaultFonts: loadedFontsData,
           background: convertSettings.background,
           format: convertSettings.page.format,
@@ -284,6 +288,8 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
           filename: opts?.filename ?? title ?? `rabbit_html2pdf_converter_${Math.floor(Date.now() / 1000)}`,
           autoSave: opts?.autoSave,
         });
+        await dropRules();
+        return data;
       }
     }
   }, [convertSettings, pageSettings, messager]);
@@ -376,25 +382,12 @@ export const PDFMaker = React.forwardRef<PDFMakerRef, PDFMakerProps>(function PD
               disabled={!pageSettings.targetElement}
               onClick={() => {
                 onApplySameSetings?.({ pageSettings, convertSettings });
-                setMessageOpen(true);
+                notifications.show('Apply success!', {
+                  severity: 'success',
+                  autoHideDuration: 2000
+                })
               }}
             >Apply Same Settings</Button>
-            <Snackbar
-              anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-              open={messageOpen}
-              autoHideDuration={2000}
-              onClose={() => {
-                setMessageOpen(false);
-              }}
-            >
-              <Alert
-                severity="success"
-                variant="filled"
-                sx={{ width: '100%' }}
-              >
-                Apply success!
-              </Alert>
-            </Snackbar>
           </FormItem>
         </Form> : <></>}
       </div>

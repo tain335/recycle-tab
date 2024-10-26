@@ -16,7 +16,6 @@ export class TabCache {
   constructor(private cache: LRUCache<number, RecycleTab, (tab: RecycleTab) => void>) { }
 
   static init(opts: TabCacheOptions) {
-    console.log('ttl', opts.ttl ?? DefaultTTL)
     const cache = new TabCache(new LRUCache<number, RecycleTab, (tab: RecycleTab) => void>({
       ttl: opts?.ttl ?? DefaultTTL,
       ttlAutopurge: false,

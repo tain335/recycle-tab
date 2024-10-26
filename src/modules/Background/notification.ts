@@ -9,7 +9,7 @@ export function emitErrorNotification(err: Error) {
   const notificationId = nanoid();
   chrome.notifications.create(notificationId, {
     iconUrl: chrome.runtime.getURL("/icon-192.png"),
-    title: 'Recycle Tabs Error',
+    title: 'Rabbit HTML2PDF Error',
     message: err.toString(),
     type: 'basic',
   });
@@ -23,7 +23,7 @@ export function emitRecycleNotification(content: string) {
   const notificationId = nanoid();
   chrome.notifications.create(notificationId, {
     iconUrl: chrome.runtime.getURL("/icon-192.png"),
-    title: 'Recycle Tabs Process',
+    title: 'Rabbit HTML2PDF',
     message: content,
     type: 'basic',
   });
@@ -37,7 +37,7 @@ export function emitStashNotification(content: string) {
   const notificationId = nanoid();
   chrome.notifications.create(notificationId, {
     iconUrl: chrome.runtime.getURL("/icon-192.png"),
-    title: 'Stash Page Success',
+    title: 'Rabbit HTML2PDF',
     message: content,
     type: 'basic',
   });

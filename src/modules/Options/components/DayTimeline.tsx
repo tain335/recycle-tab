@@ -10,6 +10,7 @@ import { useControllableValue } from "ahooks";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
 import { PDFMaker, PDFMakerRef, ConvertUpdateState, loadFonts } from "@src/components/PDFMaker";
 import { FavoritesDialog } from "./FavoritesDialog";
+import { useNotifications } from "@toolpad/core";
 
 interface TabItemProps {
   tab: RecycleTab,
@@ -19,6 +20,7 @@ interface TabItemProps {
 }
 
 function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
+  const notifications = useNotifications();
   const [convertState, setConvertState] = useState<ConvertUpdateState>();
   const pdfMakerRef = useRef<PDFMakerRef>(null);
   const [converting, setConverting] = useState(false);
@@ -54,7 +56,7 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
       <ConfirmDialog
         width='100%'
         title={"PDF Converter"}
-        confirmText="Covert"
+        confirmText="Convert"
         confirmLoading={converting}
         confirmDisabled={!convertState?.settings.pageSettings.targetElement || converting}
         onConfirm={async () => {
@@ -65,6 +67,9 @@ function TabItem({ tab, onRemove, selected, onSelectedChange }: TabItemProps) {
             setConverting(true);
             await pdfMakerRef.current?.convert();
           } catch (err) {
+            notifications.show('Oops! Convert fail, please try again.', {
+              severity: 'error'
+            });
             throw err
           } finally {
             setConverting(false)
@@ -108,7 +113,7 @@ interface DayProps {
   tabs: RecycleTab[]
   split?: boolean
   onRemove: TabItemProps['onRemove']
-  selectedTabs: number[]
+  selectedTabs: string[]
   onSelectedChange: TabItemProps['onSelectedChange']
 }
 
@@ -128,10 +133,10 @@ function Day({ time, tabs, split, onRemove, selectedTabs, onSelectedChange }: Da
         {
           tabs.map((tab) => {
             return <TabItem
-              key={tab.tabId}
+              key={tab.id}
               tab={tab}
               onRemove={onRemove}
-              selected={selectedTabs.includes(tab.tabId)}
+              selected={selectedTabs.includes(tab.id)}
               onSelectedChange={onSelectedChange}
             ></TabItem>
           })
@@ -152,8 +157,8 @@ export interface DayTimelineProps {
   onScrollItem?(item: DayTimelineItem, scrollOffset: number, itemsInDay: DayTimelineItem[]): void
   selectTime?: moment.Moment
   tabs: RecycleTab[]
-  selectedTabs?: number[]
-  onSelecteTabs?: (tabs: number[]) => void
+  selectedTabs?: string[]
+  onSelecteTabs?: (tabs: string[]) => void
   onRemove: TabItemProps['onRemove']
 }
 
@@ -166,7 +171,7 @@ export const computeSize = (tabs: DayTimelineItem[]) => (index: number) => {
 }
 
 export function DayTimeline({ onScrollItem, tabs, selectTime, onRemove, ...props }: DayTimelineProps) {
-  const [selectedTabs, setSelectedTabs] = useControllableValue<number[]>(props, { trigger: 'onSelecteTabs', valuePropName: 'selectedTabs', defaultValue: [] })
+  const [selectedTabs, setSelectedTabs] = useControllableValue<string[]>(props, { trigger: 'onSelecteTabs', valuePropName: 'selectedTabs', defaultValue: [] })
   const previousOffset = useRef<number>()
   const getItemsInDay = (items: DayTimelineItem[], m: moment.Moment) => {
     let start = m.clone().startOf('d').unix();
@@ -271,11 +276,11 @@ export function DayTimeline({ onScrollItem, tabs, selectTime, onRemove, ...props
               onRemove={onRemove}
               onSelectedChange={(tab, selected) => {
                 if (selected) {
-                  if (!selectedTabs.includes(tab.tabId)) {
-                    setSelectedTabs([...selectedTabs, tab.tabId])
+                  if (!selectedTabs.includes(tab.id)) {
+                    setSelectedTabs([...selectedTabs, tab.id])
                   }
                 } else {
-                  const index = selectedTabs.indexOf(tab.tabId);
+                  const index = selectedTabs.indexOf(tab.id);
                   if (index !== -1) {
                     let clone = selectedTabs.slice(0, selectedTabs.length);
                     clone.splice(index, 1)

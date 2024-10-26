@@ -59,11 +59,11 @@ export class CrossMessager<ReceiverMessages extends CrossMessages<ReceiverMessag
             seq: message.seq
           });
         }).catch((err) => {
-          debugger;
+          console.error("[cross_messager], err:", err);
           this.post({
             type: CROSS_MESSAGE,
             action: RESPONSE_ACTION,
-            err: err.stack,
+            err: err.stack ?? err,
             seq: message.seq
           });
         })

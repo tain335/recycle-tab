@@ -3,6 +3,7 @@ import { ConfirmDialog } from '@src/components/ConfirmDialog';
 import { PDFMaker, PDFMakerRef, ConvertUpdateState, loadFonts } from '@src/components/PDFMaker';
 import { useCrossMessage } from '@src/hooks/useCrossMessage';
 import { MessageType } from '@src/constants/constants';
+import { useNotifications } from '@toolpad/core';
 
 export function ConvertPageDialog() {
   const [converting, setConverting] = React.useState(false);
@@ -11,6 +12,7 @@ export function ConvertPageDialog() {
   const [visible, setVisible] = useState(false);
   const message = useCrossMessage(MessageType.ShowConverter);
   const [url, setUrl] = useState<string>('');
+  const notifications = useNotifications();
 
   useEffect(() => {
     if (message) {
@@ -41,6 +43,9 @@ export function ConvertPageDialog() {
         setConverting(true);
         await pdfMakerRef.current?.convert();
       } catch (err) {
+        notifications.show('Oops! Convert fail, please try again.', {
+          severity: 'error'
+        });
         throw err
       } finally {
         setConverting(false)

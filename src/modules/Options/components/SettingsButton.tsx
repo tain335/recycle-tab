@@ -10,17 +10,17 @@ import { DefaultSettings } from '@src/constants/constants'
 import { getObjectKey } from "@src/utils/getObjectKey";
 import { FavoritesDialog } from "./FavoritesDialog";
 import { ConfirmDialog } from "@src/components/ConfirmDialog";
-import { BatchPDFMaker, BatchPDFMakerRef, BatchConvertState } from "@src/components/BatchPDFMaker";
 import { FavoriteListValue } from "./FavoritesList";
 import { useCrossMessage } from "@src/hooks/useCrossMessage";
+import { useNotifications } from "@toolpad/core";
+import { BathcConvertDialog } from "@src/components/BatchConvertDialog";
 
 export function SettingsButton() {
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const notifications = useNotifications();
   const config = useCrossMessage(MessageType.ShowConfig);
   const [settingsOpen, setSettingsOpen] = useState(!!config);
-  const batchPDFMakerRef = useRef<BatchPDFMakerRef>(null);
   const anchorEl = useRef<HTMLButtonElement | null>(null);
-  const [batchConvertState, setBatchConvertState] = useState(BatchConvertState.Pending);
   const [settings, setSettings] = useState<SettingsValue>({
     ...DefaultSettings
   });
@@ -70,24 +70,15 @@ export function SettingsButton() {
       }}
     >
       <List style={{ width: 240 }}>
-        <ConfirmDialog title="PDF Converter"
-          confirmText="Convert All"
-          confirmTips={batchConvertState === BatchConvertState.Pending ? 'Please set all page settings' : ''}
-          confirmDisabled={batchConvertState !== BatchConvertState.Ready}
-          confirmLoading={batchConvertState === BatchConvertState.Working}
-          width={1100}
-          content={<BatchPDFMaker
-            onStateChange={(state) => {
-              setBatchConvertState(state);
-            }}
-            ref={batchPDFMakerRef}
-            title={favorite?.name ?? ''}
-            tabs={favorite?.tabs ?? []}
-          ></BatchPDFMaker>}
-          onConfirm={async () => {
-            await batchPDFMakerRef.current?.convertAll();
-          }}>
-          {
+        <BathcConvertDialog
+          tabs={favorite?.tabs ?? []}
+          title="PDF Converter"
+          onError={() => {
+            notifications.show('Oops! Convert fail, please try again.', {
+              severity: 'error'
+            })
+          }}
+        >{
             (setPDFMakerOpen) => <FavoritesDialog
               convertable
               onConvert={(favorite) => {
@@ -108,8 +99,7 @@ export function SettingsButton() {
                 </ListItemButton>
               </ListItem>}
             </FavoritesDialog>
-          }
-        </ConfirmDialog>
+          }</BathcConvertDialog>
         {FEATURE_RECYCLE ? <ListItem disablePadding onClick={async () => {
           setSettingsOpen(true)
           setPopoverOpen(false)

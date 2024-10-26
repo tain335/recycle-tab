@@ -22,7 +22,7 @@ export class MessageHandler {
     return await storage.removeAllTabs();
   }
 
-  async removeTabs(ids: number[]) {
+  async removeTabs(ids: string[]) {
     return await storage.removeTabs(ids)
   }
 

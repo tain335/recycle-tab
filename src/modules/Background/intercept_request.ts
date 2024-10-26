@@ -1,51 +1,79 @@
-export async function initInterceptRequest() {
+export async function initResolveCORSRules(ruleId: number, domain: string) {
+
   await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [1]
-  })
-  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [ruleId, ruleId + 1],
     addRules: [
       {
-        id: 1,
+        id: ruleId,
         priority: 1,
         action: {
-          // @ts-ignore
-          "type": "modifyHeaders",
+          type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
           requestHeaders: [
             {
-              // @ts-ignore
-              header: 'Sec-Fetch-Dest', operation: 'set', value: 'document',
+              header: 'Sec-Fetch-Mode', operation: chrome.declarativeNetRequest.HeaderOperation.SET, value: 'navigate',
             },
             {
-              // @ts-ignore
-              header: 'Sec-Fetch-Mode', operation: 'set', value: 'navigate',
-            },
-            {
-              // @ts-ignore
-              header: 'Sec-Fetch-Site', operation: 'set', value: 'same-origin',
+              header: 'Sec-Fetch-Site', operation: chrome.declarativeNetRequest.HeaderOperation.SET, value: 'same-origin',
             },
           ],
           responseHeaders: [
             {
-              // @ts-ignore
-              header: 'Content-Security-Policy', operation: 'remove',
+              header: 'Content-Security-Policy', operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
             },
             {
-              // @ts-ignore
-              header: 'X-Frame-Options', operation: 'remove',
+              header: 'X-Frame-Options', operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
             },
             {
               header: 'Access-Control-Allow-Origin',
               value: '*',
-              // @ts-ignore
-              operation: 'append',
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
             }
           ]
         },
         condition: {
-          initiatorDomains: [chrome.runtime.id],
+          initiatorDomains: [domain],
+          urlFilter: "https://*/*",
+        }
+      },
+      {
+        id: ruleId + 1,
+        priority: 1,
+        action: {
+          type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+          requestHeaders: [
+            {
+              header: 'Sec-Fetch-Mode', operation: chrome.declarativeNetRequest.HeaderOperation.SET, value: 'navigate',
+            },
+            {
+              header: 'Sec-Fetch-Site', operation: chrome.declarativeNetRequest.HeaderOperation.SET, value: 'same-origin',
+            },
+          ],
+          responseHeaders: [
+            {
+              header: 'Content-Security-Policy', operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+            },
+            {
+              header: 'X-Frame-Options', operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+            },
+            {
+              header: 'Access-Control-Allow-Origin',
+              value: '*',
+              operation: chrome.declarativeNetRequest.HeaderOperation.APPEND,
+            }
+          ]
+        },
+        condition: {
+          initiatorDomains: [domain],
+          requestMethods: [chrome.declarativeNetRequest.RequestMethod.OPTIONS],
           urlFilter: "https://*/*",
         }
       }
     ]
-  })
+  });
+
+  return async () => {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [ruleId, ruleId + 1],
+    })
+  }
 }

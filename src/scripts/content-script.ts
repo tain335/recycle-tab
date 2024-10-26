@@ -147,7 +147,7 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
     } else if (el.className) {
       const classes = el.className.split(/\s/).filter(Boolean);
       for (var i = 0; i < classes.length; i++) {
-        str += "." + classes[i]
+        str += "." + CSS.escape(classes[i])
       }
     }
     if (el.parentElement) {
@@ -238,9 +238,13 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
       document.body.append(div);
     }
   });
-
+  let navigateInited = false;
   // @ts-ignore
-  navigation.addEventListener('navigate', () => {
+  navigation.addEventListener('navigate', (e) => {
+    if (!navigateInited) {
+      navigateInited = true;
+      return;
+    }
     messager.send('target', null);
     messager.send('exclude', []);
     Array.from(document.querySelectorAll('.pdf_selector_overlay')).forEach((item) => item.remove());

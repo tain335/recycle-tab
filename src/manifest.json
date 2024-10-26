@@ -39,5 +39,6 @@
       ],
       "matches": []
     }
-  ]
+  ],
+  "minimum_chrome_version": "103"
 }

@@ -36,13 +36,13 @@ export class TabStorage {
     await this.storage.remove(key)
   }
 
-  async removeTabs(ids: number[]) {
+  async removeTabs(ids: string[]) {
     await this.storage.remove(ids.map((id) => `$tab_${id}`))
   }
 
   async removeAllTabs() {
     const all = await this.getAllTabs();
-    const tabKeys = all.map((tab) => `$tab_${tab.tabId}`)
+    const tabKeys = all.map((tab) => `$tab_${tab.id}`)
     await this.storage.remove(tabKeys)
   }
 
@@ -71,7 +71,7 @@ export class TabStorage {
   }
 
   async saveTab(tab: RecycleTab) {
-    await this.set(`$tab_${tab.tabId}`, tab)
+    await this.set(`$tab_${tab.id}`, tab)
   }
 
   async getAllTabs(): Promise<RecycleTab[]> {
