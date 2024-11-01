@@ -1,6 +1,6 @@
 {
   "name": "chrome-extension-recycle-tab",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Converts HTML to high-quality PDFs, retaining fonts, allows specific area selection, and merges multiple pages into one PDF.",
   "license": "MIT",
   "repository": {

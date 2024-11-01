@@ -72,7 +72,7 @@ export function SettingsButton() {
       <List style={{ width: 240 }}>
         <BathcConvertDialog
           tabs={favorite?.tabs ?? []}
-          title="PDF Converter"
+          title={favorite?.name ?? "PDF Converter"}
           onError={() => {
             notifications.show('Oops! Convert fail, please try again.', {
               severity: 'error'

@@ -1,4 +1,4 @@
-import { web2pdf } from 'web2pdf/dist/cjs';
+import { collectStyleSheetFonts, web2pdf } from 'web2pdf/dist/cjs';
 import { CrossMessager } from "@src/messager/messager";
 import { HostMessages, Target } from '@src/components/PDFMaker';
 import { PageFomat } from 'web2pdf/dist/pagebreak';
@@ -39,7 +39,7 @@ function initMessager(): CrossMessager<FrameMessages, HostMessages> {
   });
 }
 
-function getElOffset(el: HTMLElement) {
+function getElOffsetFromBody(el: HTMLElement) {
   const bodyRect = document.body.getBoundingClientRect();
   const elemRect = el.getBoundingClientRect();
   const offsetTop = elemRect.top - bodyRect.top;
@@ -50,9 +50,20 @@ function getElOffset(el: HTMLElement) {
   }
 }
 
+function getElOffsetFromDocument(el: HTMLElement) {
+  const docRect = document.documentElement.getBoundingClientRect();
+  const elemRect = el.getBoundingClientRect();
+  const offsetTop = elemRect.top - docRect.top;
+  const offsetLeft = elemRect.left - docRect.left;
+  return {
+    offsetTop,
+    offsetLeft
+  }
+}
+
 function createOverlayFromEl(id: string, el: HTMLElement, color: string) {
   const selectDiv = document.createElement('div');
-  const { offsetTop, offsetLeft } = getElOffset(el);
+  const { offsetTop, offsetLeft } = getElOffsetFromBody(el);
   if (selectDiv) {
     const width = el.clientWidth;
     const height = el.clientHeight;
@@ -91,10 +102,11 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
         const fontFamilies = collectElFontFamiles(el as HTMLElement);
         const result = await messager.send('resolveFonts', fontFamilies);
         observer.disconnect();
+        const fonts = await collectStyleSheetFonts();
         return await web2pdf(el as HTMLElement, {
           autoDownload: params.autoSave ?? true,
           defaultFonts: params.defaultFonts,
-          fonts: result.resolvedFonts,
+          fonts: { ...result.resolvedFonts, ...fonts },
           margin: [20, 10],
           background: params.background ?? '#ffffff',
           format: params.format as PageFomat,
@@ -168,7 +180,7 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
     if (overlay) {
       const width = overlay.clientWidth;
       const height = overlay.clientHeight;
-      const { offsetTop, offsetLeft } = getElOffset(overlay);
+      const { offsetTop, offsetLeft } = getElOffsetFromDocument(overlay);
       if (event.pageX >= offsetLeft && event.pageX <= offsetLeft + width && event.pageY >= offsetTop && event.pageY <= offsetTop + height) {
         event.stopPropagation();
         event.preventDefault();
@@ -225,7 +237,7 @@ function initEvents(messager: CrossMessager<FrameMessages, HostMessages>) {
     const el = event.target as HTMLElement;
     const width = el.clientWidth;
     const height = el.clientHeight;
-    const { offsetLeft, offsetTop } = getElOffset(el);
+    const { offsetLeft, offsetTop } = getElOffsetFromBody(el);
     let div = document.getElementById(PDF_OVERLAY);
     let exist = Boolean(div);
     if (!exist) {

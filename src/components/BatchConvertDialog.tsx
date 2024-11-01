@@ -14,7 +14,7 @@ interface BathcConvertDialogProps {
 export function BathcConvertDialog(props: BathcConvertDialogProps) {
   const [batchConvertState, setBatchConvertState] = useState(BatchConvertState.Pending);
   const batchPDFMakerRef = useRef<BatchPDFMakerRef>(null);
-  return <ConfirmDialog title={"PDF Converter"}
+  return <ConfirmDialog title={props.title ?? 'PDF Converter'}
     confirmText={hasFlags(batchConvertState, BatchConvertState.Fail) ? 'Close' : hasFlags(batchConvertState, BatchConvertState.Interrupted) ? "Continue" : "Convert All"}
     confirmTips={hasFlags(batchConvertState, BatchConvertState.Pending) ? 'Please set all page settings' : ''}
     confirmDisabled={hasFlags(batchConvertState, BatchConvertState.Pending)

@@ -107,7 +107,6 @@ const Options: React.FC<Props> = ({ title }: Props) => {
       <Drawer variant="persistent" open={!!selectedTabs.length} anchor='bottom' hideBackdrop>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'end', height: 60, margin: '0 160px' }}>
           <BathcConvertDialog
-            title="PDF Converter"
             onError={() => {
               notifications.show('Oops! Convert fail, please try again.', {
                 severity: 'error'
